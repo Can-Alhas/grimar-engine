@@ -1,0 +1,65 @@
+﻿############################
+# Build outputs
+############################
+cmake-build-*/
+build/
+out/
+
+############################
+# CMake generated
+############################
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+*.cmake.user
+*.ninja
+*.ninja_deps
+*.ninja_log
+
+############################
+# vcpkg (manifest mode)
+############################
+**/vcpkg_installed/
+.vcpkg-root
+
+############################
+# CLion / JetBrains
+############################
+.idea/
+*.iml
+
+############################
+# Visual Studio / MSVC
+############################
+.vs/
+*.obj
+*.pdb
+*.ilk
+*.idb
+*.tlog
+*.pch
+*.suo
+*.VC.db
+
+############################
+# Windows binaries
+############################
+*.exe
+*.dll
+
+############################
+# Logs & temp
+############################
+*.log
+*.tmp
+
+############################
+# OS junk
+############################
+Thumbs.db
+.DS_Store
+
+############################
+# Optional: assets cache (ileride eklenirse)
+############################
+# assets/cache/

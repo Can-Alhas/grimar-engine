@@ -1,0 +1,6 @@
+﻿
+
+#ifndef GRIMAR_ASSERT_HPP
+#define GRIMAR_ASSERT_HPP
+
+#endif //GRIMAR_ASSERT_HPP
