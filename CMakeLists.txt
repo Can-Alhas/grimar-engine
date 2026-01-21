@@ -12,6 +12,9 @@ add_library(grimar_engine STATIC
         src/core/Assert.cpp
         include/grimar/core/Log.hpp
         src/core/Log.cpp
+        include/grimar/core/Time.hpp
+        src/core/Time.cpp
+
 )
 
 target_include_directories(grimar_engine PUBLIC

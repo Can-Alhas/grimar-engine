@@ -3,6 +3,7 @@
 
 #include "grimar/core/Assert.hpp"
 #include "grimar/core/Log.hpp"
+#include "grimar/core/Time.hpp"
 
 int main(int argc, char* argv[])
 {
@@ -75,8 +76,21 @@ int main(int argc, char* argv[])
     // GRIMAR_LOG_WARN("warn test");
     // GRIMAR_LOG_ERROR("error test");
 
-    GRIMAR_LOG_INFO("Boot");
-    GRIMAR_ASSERT_MSG(false, "Intentional assert test");
+    //GRIMAR_LOG_INFO("Boot");
+    //GRIMAR_ASSERT_MSG(false, "Intentional assert test");
 
+
+    for (int i = 0; i < 5; ++i) {
+        grimar::core::Time::BeginFrame();
+
+        GRIMAR_LOG_INFO("Frame start");
+
+        while (grimar::core::Time::Accumulator() >=
+               grimar::core::Time::FixedDeltaTime()) {
+
+            GRIMAR_LOG_TRACE("FixedUpdate tick");
+            grimar::core::Time::ConsumeFixedStep();
+        }
+    }
     return 0;
 }
