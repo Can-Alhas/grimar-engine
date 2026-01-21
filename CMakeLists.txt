@@ -9,6 +9,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_library(grimar_engine STATIC
         src/core/dummy.cpp
         include/grimar/core/Assert.hpp
+        src/core/Assert.cpp
+        include/grimar/core/Log.hpp
+        src/core/Log.cpp
 )
 
 target_include_directories(grimar_engine PUBLIC
@@ -17,6 +20,7 @@ target_include_directories(grimar_engine PUBLIC
 
 target_sources(grimar_engine PRIVATE
         src/core/dummy.cpp
+        src/core/Assert.cpp
 )
 
 
