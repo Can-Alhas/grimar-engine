@@ -21,6 +21,10 @@ namespace grimar::core {
         static double Accumulator() noexcept;
         static void ConsumeFixedStep() noexcept;
 
+        //
+        static void ClearAccumulator() noexcept;
+
+
         // Optional controls
         static void SetFixedDeltaTime(double seconds) noexcept;
         static void Reset() noexcept;

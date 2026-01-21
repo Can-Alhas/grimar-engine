@@ -49,6 +49,10 @@ namespace grimar::core {
         s_accumulator -= s_fixedDelta;
     }
 
+    void Time::ClearAccumulator() noexcept {
+        s_accumulator = 0.0;
+    }
+
     void Time::SetFixedDeltaTime(double seconds) noexcept {
         s_fixedDelta = seconds;
     }

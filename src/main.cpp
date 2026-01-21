@@ -1,73 +1,11 @@
-﻿#include <SDL.h>
-#include <cstdio>
-
-#include "grimar/core/Assert.hpp"
+﻿
+#include "grimar/engine/EngineApp.hpp"
 #include "grimar/core/Log.hpp"
-#include "grimar/core/Time.hpp"
 
-int main(int argc, char* argv[])
+
+int main()
 {
-    // if (SDL_Init(SDL_INIT_VIDEO) != 0)
-    // {
-    //     std::printf("SDL_Init Error: %s\n", SDL_GetError());
-    //     return 1;
-    // }
-    //
-    // SDL_Window* window = SDL_CreateWindow(
-    //     "Grimar Engine - SDL2 Test",
-    //     SDL_WINDOWPOS_CENTERED,
-    //     SDL_WINDOWPOS_CENTERED,
-    //     800,
-    //     600,
-    //     SDL_WINDOW_SHOWN
-    // );
-    //
-    // if (!window)
-    // {
-    //     std::printf("SDL_CreateWindow Error: %s\n", SDL_GetError());
-    //     SDL_Quit();
-    //     return 1;
-    // }
-    //
-    // SDL_Renderer* renderer = SDL_CreateRenderer(
-    //     window,
-    //     -1,
-    //     SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC
-    // );
-    //
-    // if (!renderer)
-    // {
-    //     std::printf("SDL_CreateRenderer Error: %s\n", SDL_GetError());
-    //     SDL_DestroyWindow(window);
-    //     SDL_Quit();
-    //     return 1;
-    // }
-    //
-    // bool running = true;
-    // while (running)
-    // {
-    //     SDL_Event e;
-    //     while (SDL_PollEvent(&e))
-    //     {
-    //         if (e.type == SDL_QUIT)
-    //             running = false;
-    //
-    //         if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE)
-    //             running = false;
-    //     }
-    //
-    //     // Arka plan rengi (koyu gri)
-    //     SDL_SetRenderDrawColor(renderer, 30, 30, 30, 255);
-    //     SDL_RenderClear(renderer);
-    //
-    //     SDL_RenderPresent(renderer);
-    // }
-    //
-    // SDL_DestroyRenderer(renderer);
-    // SDL_DestroyWindow(window);
-    // SDL_Quit();
-    // return 0;
-
+#pragma region old logs
     //GRIMAR_ASSERT(2 + 2 == 4);
     //GRIMAR_ASSERT_MSG(false, "Intentional assert test");
 
@@ -80,17 +18,43 @@ int main(int argc, char* argv[])
     //GRIMAR_ASSERT_MSG(false, "Intentional assert test");
 
 
-    for (int i = 0; i < 5; ++i) {
-        grimar::core::Time::BeginFrame();
+    // for (int i = 0; i < 5; ++i) {
+    //     grimar::core::Time::BeginFrame();
+    //
+    //     GRIMAR_LOG_INFO("Frame start");
+    //
+    //     while (grimar::core::Time::Accumulator() >=
+    //            grimar::core::Time::FixedDeltaTime()) {
+    //
+    //         GRIMAR_LOG_TRACE("FixedUpdate tick");
+    //         grimar::core::Time::ConsumeFixedStep();
+    //     }
+    // }
 
-        GRIMAR_LOG_INFO("Frame start");
+#pragma endregion
 
-        while (grimar::core::Time::Accumulator() >=
-               grimar::core::Time::FixedDeltaTime()) {
 
-            GRIMAR_LOG_TRACE("FixedUpdate tick");
-            grimar::core::Time::ConsumeFixedStep();
-        }
-    }
-    return 0;
+    grimar::core::SetLogLevel(grimar::core::LogLevel::Trace);
+
+    grimar::engine::EngineConfig cfg{};
+    cfg.windowTitle  = "Grimar Sandbox";
+    cfg.windowWidth  = 1280;
+    cfg.windowHeight = 720;
+
+    // Test : vsync false
+    cfg.vsync = true;
+
+    // Fixed timestep
+    cfg.fixedDeltaTime = 1.0 / 60.0;
+
+    // Spiral-of-death guard
+    cfg.maxFixedStepsPerFrame = 5;
+
+    grimar::engine::EngineApp engine(cfg);
+    if (!engine.Init())
+        return 1;
+
+    return engine.Run();
+
+
 }

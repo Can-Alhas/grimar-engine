@@ -14,6 +14,8 @@ add_library(grimar_engine STATIC
         src/core/Log.cpp
         include/grimar/core/Time.hpp
         src/core/Time.cpp
+        include/grimar/engine/EngineApp.hpp
+        src/engine/EngineApp.cpp
 
 )
 
