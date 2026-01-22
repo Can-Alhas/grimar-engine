@@ -2,6 +2,8 @@
 
 #include "grimar/engine/EngineApp.hpp"
 
+#include <pplinterface.h>
+
 #include "grimar/core/Assert.hpp"
 #include "grimar/core/Log.hpp"
 #include "grimar/core/Time.hpp"
@@ -18,6 +20,23 @@ namespace grimar::engine {
     static int    s_frameCount = 0;
     static double s_frameTimer = 0.0;
     // for tests
+
+    static grimar::platform::Key MapKey(SDL_Keycode key) {
+        using grimar::platform::Key;
+        switch (key) {
+            case SDLK_ESCAPE: return Key::Escape;
+            case SDLK_a:      return Key::A;
+            case SDLK_d:      return Key::D;
+            case SDLK_w:      return Key::W;
+            case SDLK_s:      return Key::S;
+            case SDLK_SPACE:  return Key::Space;
+            case SDLK_LEFT:   return Key::Left;
+            case SDLK_RIGHT:  return Key::Right;
+            case SDLK_UP:     return Key::Up;
+            case SDLK_DOWN:   return Key::Down;
+            default:      return Key::Count;
+        }
+    }
 
     EngineApp::EngineApp(EngineConfig cfg) noexcept
     : m_cfg(cfg) { }
@@ -54,7 +73,7 @@ namespace grimar::engine {
     }
 
     void EngineApp::Shutdown() noexcept {
-        if (!m_window && !m_renderer) return; // already shutdown (simple guard)
+        if (m_window.IsValid() && !m_renderer) return; // already shutdown (simple guard)
 
         GRIMAR_LOG_INFO("EngineApp::Shutdown()");
         ShutdownSDL();
@@ -68,29 +87,39 @@ namespace grimar::engine {
             return false;
         }
 
-        m_window = SDL_CreateWindow(
+        // old....
+        /*m_window = SDL_CreateWindow(
             m_cfg.windowTitle,
             SDL_WINDOWPOS_CENTERED,
             SDL_WINDOWPOS_CENTERED,
             m_cfg.windowWidth,
             m_cfg.windowHeight,
             SDL_WINDOW_SHOWN
-        );
+        ); */
 
-        if (!m_window) {
+        // Window create (SDL_CreateWindow -- deleted)
+
+        grimar::platform::WindowDesc wd{};
+        wd.title     = m_cfg.windowTitle;
+        wd.width     = m_cfg.windowWidth;
+        wd.height    = m_cfg.windowHeight;
+        wd.resizable = false;
+
+        if (!m_window.Create(wd)) {
             GRIMAR_LOG_ERROR(SDL_GetError());
             SDL_Quit();
             return false;
         }
 
+        // 3 Rendererer create (now EngineApp )
         const Uint32 flags = SDL_RENDERER_ACCELERATED |
                              (m_cfg.vsync ? SDL_RENDERER_PRESENTVSYNC : 0);
 
-        m_renderer = SDL_CreateRenderer(m_window, -1, flags);
+        m_renderer = SDL_CreateRenderer(m_window.NativeHandle(), -1, flags);
+
         if (!m_renderer) {
             GRIMAR_LOG_ERROR(SDL_GetError());
-            SDL_DestroyWindow(m_window);
-            m_window = nullptr;
+            m_window.Destroy();
             SDL_Quit();
             return false;
         }
@@ -104,10 +133,10 @@ namespace grimar::engine {
             m_renderer = nullptr;
         }
 
-        if (m_window) {
-            SDL_DestroyWindow(m_window);
-            m_window = nullptr;
-        }
+        // SDL_DestroyWindow xxxxxxx deleted;
+        m_window.Destroy();
+
+
         SDL_Quit();
     }
 
@@ -115,18 +144,29 @@ namespace grimar::engine {
     void EngineApp::PollEvents() noexcept {
         SDL_Event e;
         while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) {
-                m_running = false;
+            if (e.type == SDL_QUIT) m_running = false;
+
+
+            if (e.type == SDL_KEYDOWN || e.type == SDL_KEYUP) {
+                const bool down = (e.type == SDL_KEYDOWN);
+                const auto mapped = MapKey(e.key.keysym.sym);
+                if (mapped != grimar::platform::Key::Count) {
+                    m_input.SetKeyDown(mapped, down);
+                }
             }
 
-            if (e.type == SDL_KEYDOWN && e.key.keysym.sym == SDLK_ESCAPE) {
-                m_running = false;
-            }
+
+        }
+
+        // exit with ESC ------ input
+        if (m_input.WasKeyPressed(grimar::platform::Key::Escape)) {
+            m_running = false;
         }
     }
 
     void EngineApp::Tick() noexcept {
-        PollEvents();
+        m_input.BeginFrame(); // prev = curr
+        PollEvents();        // curr filled
 
         // time update (delta + acccumulator)
         grimar::core::Time::BeginFrame();
@@ -181,6 +221,12 @@ namespace grimar::engine {
     // TODO ~~~~
     void EngineApp::Update(double dt) noexcept {
         // later: game logic, animations, variable-step systems
+
+        using grimar::platform::Key;
+
+        if (m_input.WasKeyPressed(Key::A)) {
+            GRIMAR_LOG_INFO("A pressed");
+        }
 
         // for test
         SDL_Delay(20);

@@ -3,6 +3,9 @@
 
 #include <cstdint>
 
+#include "grimar/platform/Input.hpp"
+#include "grimar/platform/Window.hpp"
+
 struct SDL_Window;
 struct SDL_Renderer;
 
@@ -51,7 +54,9 @@ namespace grimar::engine {
         EngineConfig m_cfg{};
         bool m_running{false};
 
-        SDL_Window*    m_window{nullptr};
+        // SDL_Window*    m_window{nullptr}; // Deprec
+        grimar::platform::Window m_window;
+        grimar::platform::Input  m_input;
         SDL_Renderer*  m_renderer{nullptr};
     };
 }

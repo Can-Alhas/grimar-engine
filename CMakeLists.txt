@@ -16,6 +16,10 @@ add_library(grimar_engine STATIC
         src/core/Time.cpp
         include/grimar/engine/EngineApp.hpp
         src/engine/EngineApp.cpp
+        include/grimar/platform/Window.hpp
+        src/platform/Window.cpp
+        include/grimar/platform/Input.hpp
+        src/platform/Input.cpp
 
 )
 
