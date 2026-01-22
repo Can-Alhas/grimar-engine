@@ -20,6 +20,11 @@ add_library(grimar_engine STATIC
         src/platform/Window.cpp
         include/grimar/platform/Input.hpp
         src/platform/Input.cpp
+        include/grimar/render/Color.hpp
+        include/grimar/render/Rect.hpp
+        include/grimar/render/Renderer2D.hpp
+        include/grimar/render/SdlRenderer2D.hpp
+        src/render/SdlRenderer2D.cpp
 
 )
 

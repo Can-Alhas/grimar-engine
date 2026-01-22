@@ -1,6 +1,4 @@
-﻿// ~ Grimar Engine ~
-
-
+// ~ Grimar Engine ~
 #pragma once
 
 #include <cstdint>

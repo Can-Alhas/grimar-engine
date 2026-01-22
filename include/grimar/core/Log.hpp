@@ -1,4 +1,4 @@
-﻿// ~ Grimar Engine ~
+// ~ Grimar Engine ~
 #pragma once
 
 #include <string_view>

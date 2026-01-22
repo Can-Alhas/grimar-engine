@@ -2,12 +2,13 @@
 #pragma once
 
 #include <cstdint>
+#include <memory>
 
 #include "grimar/platform/Input.hpp"
 #include "grimar/platform/Window.hpp"
+#include "grimar/render/Renderer2D.hpp"
 
-struct SDL_Window;
-struct SDL_Renderer;
+
 
 namespace grimar::engine {
 
@@ -32,7 +33,7 @@ namespace grimar::engine {
         ~EngineApp() noexcept;
 
         EngineApp(const EngineApp& ) = delete;
-        EngineApp operator=(const EngineApp& ) = delete;
+        EngineApp& operator=(const EngineApp& ) = delete;
 
         bool Init()     noexcept;
         int  Run()      noexcept; // main loop
@@ -57,6 +58,7 @@ namespace grimar::engine {
         // SDL_Window*    m_window{nullptr}; // Deprec
         grimar::platform::Window m_window;
         grimar::platform::Input  m_input;
-        SDL_Renderer*  m_renderer{nullptr};
+        //SDL_Renderer*  m_renderer{nullptr};
+        std::unique_ptr<render::Renderer2D> m_renderer;
     };
 }

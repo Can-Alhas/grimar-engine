@@ -2,13 +2,14 @@
 
 #include "grimar/engine/EngineApp.hpp"
 
-#include <pplinterface.h>
 
 #include "grimar/core/Assert.hpp"
 #include "grimar/core/Log.hpp"
 #include "grimar/core/Time.hpp"
 
 #include <SDL.h>
+
+#include "grimar/render/SdlRenderer2D.hpp"
 
 
 namespace grimar::engine {
@@ -53,11 +54,27 @@ namespace grimar::engine {
             return false;
         }
 
+        GRIMAR_LOG_INFO("InitSDL OK");
+
+        m_renderer = std::make_unique<grimar::render::SdlRenderer2D>();
+
+        grimar::render::Renderer2DDesc rd{};
+        rd.vsync = m_cfg.vsync;
+
+        if (!m_renderer->Init(m_window, rd)) {
+            GRIMAR_LOG_ERROR("Renderer2D init failed");
+            m_renderer.reset();
+            return false;
+        }
+
+        GRIMAR_LOG_INFO("Renderer2D OK");
+
         grimar::core::Time::Reset();
         grimar::core::Time::SetFixedDeltaTime(m_cfg.fixedDeltaTime);
 
         m_running = true;
         return true;
+
     }
 
     int EngineApp::Run() noexcept {
@@ -73,7 +90,7 @@ namespace grimar::engine {
     }
 
     void EngineApp::Shutdown() noexcept {
-        if (m_window.IsValid() && !m_renderer) return; // already shutdown (simple guard)
+        if (!m_running && !m_window.IsValid() && !m_renderer) return; // already shutdown (simple guard)
 
         GRIMAR_LOG_INFO("EngineApp::Shutdown()");
         ShutdownSDL();
@@ -87,17 +104,6 @@ namespace grimar::engine {
             return false;
         }
 
-        // old....
-        /*m_window = SDL_CreateWindow(
-            m_cfg.windowTitle,
-            SDL_WINDOWPOS_CENTERED,
-            SDL_WINDOWPOS_CENTERED,
-            m_cfg.windowWidth,
-            m_cfg.windowHeight,
-            SDL_WINDOW_SHOWN
-        ); */
-
-        // Window create (SDL_CreateWindow -- deleted)
 
         grimar::platform::WindowDesc wd{};
         wd.title     = m_cfg.windowTitle;
@@ -111,31 +117,15 @@ namespace grimar::engine {
             return false;
         }
 
-        // 3 Rendererer create (now EngineApp )
-        const Uint32 flags = SDL_RENDERER_ACCELERATED |
-                             (m_cfg.vsync ? SDL_RENDERER_PRESENTVSYNC : 0);
-
-        m_renderer = SDL_CreateRenderer(m_window.NativeHandle(), -1, flags);
-
-        if (!m_renderer) {
-            GRIMAR_LOG_ERROR(SDL_GetError());
-            m_window.Destroy();
-            SDL_Quit();
-            return false;
-        }
 
         return true;
     }
 
     void EngineApp::ShutdownSDL() noexcept {
-        if (m_renderer) {
-            SDL_DestroyRenderer(m_renderer);
-            m_renderer = nullptr;
-        }
 
-        // SDL_DestroyWindow xxxxxxx deleted;
+        m_renderer.reset(); // Renderer2D::~Renderer2D() cagrilir
+
         m_window.Destroy();
-
 
         SDL_Quit();
     }
@@ -185,7 +175,7 @@ namespace grimar::engine {
 
                 // (prevents infinite catch-up under heavy load)
 
-                grimar::core::Time::Reset(); // or: just clear accumulator
+                //grimar::core::Time::Reset(); // or: just clear accumulator
                 // Better: clear only accumulator (see note below)
 
                 grimar::core::Time::ClearAccumulator();
@@ -222,15 +212,16 @@ namespace grimar::engine {
     void EngineApp::Update(double dt) noexcept {
         // later: game logic, animations, variable-step systems
 
+        // this or [[maybe_unused]]
+        //(void)dt;
+
         using grimar::platform::Key;
 
         if (m_input.WasKeyPressed(Key::A)) {
             GRIMAR_LOG_INFO("A pressed");
         }
 
-        // for test
-        SDL_Delay(20);
-        //
+
 
         ++s_frameCount;
         s_frameTimer += dt;
@@ -238,16 +229,31 @@ namespace grimar::engine {
         if (s_frameTimer >= 1.0) {
             GRIMAR_LOG_INFO("Update/Render: ~FPS measured");
             s_frameTimer = 0.0;
-            s_fixedCount = 0;
+            s_frameCount = 0;
         }
     }
 
     void EngineApp::Render(double /*alpha*/) noexcept {
         // Clear background
-        SDL_SetRenderDrawColor(m_renderer, 30, 30, 30, 255);
-        SDL_RenderClear(m_renderer);
+        // SDL_SetRenderDrawColor(m_renderer, 30, 30, 30, 255);
+        // SDL_RenderClear(m_renderer);
+        //
+        // SDL_RenderPresent(m_renderer);
 
-        SDL_RenderPresent(m_renderer);
+        if (!m_renderer) return;
+
+        m_renderer->BeginFrame();
+        m_renderer->Clear(grimar::render::Color{20,20,20,255});
+
+        m_renderer->DrawRect(
+            grimar::render::RectF{100.f, 100.f, 220.f, 140.f},
+            grimar::render::Color{220, 80, 80, 255},
+            0
+        );
+        // Test Draw (Sprint 2.3)
+        // m_renderer->DrawRect(...)
+
+        m_renderer->EndFrame();
     }
 
 }
