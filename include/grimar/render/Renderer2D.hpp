@@ -10,11 +10,14 @@
 #include "grimar/render/Rect.hpp"
 
 
+
 namespace grimar::platform {
     class Window;
 }
 
 namespace grimar::render {
+
+    class Camera2D;
 
     // Sorting layer (simple integer for now)
     using Layer = std::int32_t;
@@ -37,7 +40,13 @@ namespace grimar::render {
         virtual void BeginFrame() noexcept = 0;
         virtual void Clear(Color color) noexcept = 0;
         virtual void DrawRect(RectF rect, Color color, Layer layer = 0) noexcept = 0;
+        void DrawRect(float x, float y, float w, float h,
+                      Color color, Layer layer = 0 ) noexcept {
+            DrawRect(RectF{x, y, w, h}, color, layer);
+        }
         virtual void EndFrame() noexcept = 0;
+
+        virtual void SetCamera(const Camera2D* camera) noexcept = 0;
 
     protected:
         Renderer2D() = default;

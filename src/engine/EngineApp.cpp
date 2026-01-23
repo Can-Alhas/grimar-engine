@@ -30,6 +30,8 @@ namespace grimar::engine {
             case SDLK_d:      return Key::D;
             case SDLK_w:      return Key::W;
             case SDLK_s:      return Key::S;
+            case SDLK_q:      return Key::Q;
+            case SDLK_e:      return Key::E;
             case SDLK_SPACE:  return Key::Space;
             case SDLK_LEFT:   return Key::Left;
             case SDLK_RIGHT:  return Key::Right;
@@ -69,6 +71,13 @@ namespace grimar::engine {
 
         GRIMAR_LOG_INFO("Renderer2D OK");
 
+        // === Camera init ===
+        m_camera.SetViewport(m_cfg.windowWidth, m_cfg.windowHeight);
+        m_camera.SetPosition({0.f, 0.f});
+        m_camera.SetZoom(1.0f);
+        m_renderer->SetCamera(&m_camera);
+
+        // === Time ===
         grimar::core::Time::Reset();
         grimar::core::Time::SetFixedDeltaTime(m_cfg.fixedDeltaTime);
 
@@ -210,10 +219,13 @@ namespace grimar::engine {
     }
     // TODO ~~~~
     void EngineApp::Update(double dt) noexcept {
-        // later: game logic, animations, variable-step systems
 
         // this or [[maybe_unused]]
         //(void)dt;
+
+        auto pos = m_camera.Position();
+        const float speed = 300.f * static_cast<float>(dt);
+
 
         using grimar::platform::Key;
 
@@ -221,8 +233,31 @@ namespace grimar::engine {
             GRIMAR_LOG_INFO("A pressed");
         }
 
+        // Movement (Hold)
+        if (m_input.IsKeyDown(Key::A)) pos.x -= speed;
+        if (m_input.IsKeyDown(Key::D)) pos.x += speed;
+        if (m_input.IsKeyDown(Key::W)) pos.y += speed;
+        if (m_input.IsKeyDown(Key::S)) pos.y -= speed;
+
+        m_camera.SetPosition(pos);
 
 
+        // zoom (Step)
+        float zoom = m_camera.Zoom();
+        if (m_input.WasKeyPressed(Key::Q)) {
+            GRIMAR_LOG_INFO("Zoom OUT");
+            zoom *= 0.9f;
+        }
+        if (m_input.WasKeyPressed(Key::E)) {
+            GRIMAR_LOG_INFO("Zoom IN");
+            zoom *= 1.1f;
+        }
+
+        if (zoom < 0.25f) zoom = 0.25f;
+        if (zoom > 6.0f)  zoom = 6.0f;
+        m_camera.SetZoom(zoom);
+
+        //fps test log
         ++s_frameCount;
         s_frameTimer += dt;
 
@@ -234,24 +269,26 @@ namespace grimar::engine {
     }
 
     void EngineApp::Render(double /*alpha*/) noexcept {
-        // Clear background
-        // SDL_SetRenderDrawColor(m_renderer, 30, 30, 30, 255);
-        // SDL_RenderClear(m_renderer);
-        //
-        // SDL_RenderPresent(m_renderer);
 
         if (!m_renderer) return;
 
-        m_renderer->BeginFrame();
-        m_renderer->Clear(grimar::render::Color{20,20,20,255});
 
-        m_renderer->DrawRect(
-            grimar::render::RectF{100.f, 100.f, 220.f, 140.f},
-            grimar::render::Color{220, 80, 80, 255},
-            0
-        );
-        // Test Draw (Sprint 2.3)
-        // m_renderer->DrawRect(...)
+        m_renderer->BeginFrame();
+
+        m_renderer->Clear({20, 20, 20, 255});
+
+
+
+        m_renderer->DrawRect({100, 100, 200, 140},
+                              {60, 180, 255, 255},
+                              0);
+
+
+
+        m_renderer->DrawRect({160, 140, 200, 140},
+                      {220, 80, 80, 255},
+                      10);
+
 
         m_renderer->EndFrame();
     }

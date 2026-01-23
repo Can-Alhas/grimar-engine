@@ -11,6 +11,7 @@ namespace grimar::platform {
     enum class Key : uint16_t {
         Escape,
         A, D, W, S,
+        Q, E,
         Space,
         Left, Right, Up, Down,
         Count

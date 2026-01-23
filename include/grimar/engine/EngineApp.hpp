@@ -8,6 +8,8 @@
 #include "grimar/platform/Window.hpp"
 #include "grimar/render/Renderer2D.hpp"
 
+#include "grimar/render/Camera2D.hpp"
+
 
 
 namespace grimar::engine {
@@ -60,5 +62,7 @@ namespace grimar::engine {
         grimar::platform::Input  m_input;
         //SDL_Renderer*  m_renderer{nullptr};
         std::unique_ptr<render::Renderer2D> m_renderer;
+
+        grimar::render::Camera2D m_camera;
     };
 }
