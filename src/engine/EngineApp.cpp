@@ -8,6 +8,7 @@
 #include "grimar/core/Time.hpp"
 
 #include <SDL.h>
+#include <SDL_image.h>
 
 #include "grimar/render/SdlRenderer2D.hpp"
 
@@ -45,6 +46,7 @@ namespace grimar::engine {
     : m_cfg(cfg) { }
 
     EngineApp::~EngineApp() noexcept {
+     
         Shutdown();
     }
 
@@ -76,6 +78,31 @@ namespace grimar::engine {
         m_camera.SetPosition({0.f, 0.f});
         m_camera.SetZoom(1.0f);
         m_renderer->SetCamera(&m_camera);
+
+        auto t1 = m_assets.LoadTexture(*m_renderer, "assets/test.png");
+        auto t2 = m_assets.LoadTexture(*m_renderer, "assets/test.png");
+
+        GRIMAR_ASSERT(m_assets.TextureCount() == 1);
+
+        if (t1 && t2) {
+            GRIMAR_LOG_INFO("AssetManager load OK (twice)");
+        } else {
+            GRIMAR_LOG_WARN("AssetManager load failed");
+        }
+
+
+        m_textTex = m_assets.LoadTexture(*m_renderer, "assets/test.png");
+        if (!m_textTex) {
+            GRIMAR_LOG_WARN("test.png failed to load");
+        } else {
+            GRIMAR_LOG_INFO("test.png loaded (cached)");
+        }
+
+        /*if (!m_testTexture.LoadFromFile(*m_renderer, "assets/test.png")) {
+            GRIMAR_LOG_WARN("test.png failed to load (check path)");
+        } else {
+            //GRIMAR_LOG_INFO("test.png loaded");
+        }*/
 
         // === Time ===
         grimar::core::Time::Reset();
@@ -113,6 +140,13 @@ namespace grimar::engine {
             return false;
         }
 
+        // (SDL_image init)
+        const int imgFlags = IMG_INIT_PNG;
+        if ((IMG_Init(imgFlags) & imgFlags) != imgFlags) {
+            GRIMAR_LOG_ERROR(IMG_GetError());
+            SDL_Quit();
+            return false;
+        }
 
         grimar::platform::WindowDesc wd{};
         wd.title     = m_cfg.windowTitle;
@@ -122,6 +156,7 @@ namespace grimar::engine {
 
         if (!m_window.Create(wd)) {
             GRIMAR_LOG_ERROR(SDL_GetError());
+            IMG_Quit();  // SDL_image close
             SDL_Quit();
             return false;
         }
@@ -136,6 +171,7 @@ namespace grimar::engine {
 
         m_window.Destroy();
 
+        IMG_Quit(); // img_quit ===
         SDL_Quit();
     }
 
@@ -212,7 +248,7 @@ namespace grimar::engine {
         s_fixedTimer += fixedDt;
 
         if (s_fixedTimer >= 1.0) {
-            GRIMAR_LOG_INFO("FixedUpdate: running at ~60 Hz");
+            //GRIMAR_LOG_INFO("FixedUpdate: running at ~60 Hz");
             s_fixedTimer = 0.0;
             s_fixedCount = 0;
         }
@@ -234,10 +270,10 @@ namespace grimar::engine {
         }
 
         // Movement (Hold)
-        if (m_input.IsKeyDown(Key::A)) pos.x -= speed;
-        if (m_input.IsKeyDown(Key::D)) pos.x += speed;
-        if (m_input.IsKeyDown(Key::W)) pos.y += speed;
-        if (m_input.IsKeyDown(Key::S)) pos.y -= speed;
+        if (m_input.IsKeyDown(Key::A)) pos.x += speed;
+        if (m_input.IsKeyDown(Key::D)) pos.x -= speed;
+        if (m_input.IsKeyDown(Key::W)) pos.y -= speed;
+        if (m_input.IsKeyDown(Key::S)) pos.y += speed;
 
         m_camera.SetPosition(pos);
 
@@ -262,7 +298,7 @@ namespace grimar::engine {
         s_frameTimer += dt;
 
         if (s_frameTimer >= 1.0) {
-            GRIMAR_LOG_INFO("Update/Render: ~FPS measured");
+            //GRIMAR_LOG_INFO("Update/Render: ~FPS measured");
             s_frameTimer = 0.0;
             s_frameCount = 0;
         }
@@ -285,10 +321,23 @@ namespace grimar::engine {
 
 
 
-        m_renderer->DrawRect({160, 140, 200, 140},
-                      {220, 80, 80, 255},
-                      10);
 
+
+        if (m_textTex) {
+            m_renderer->DrawSprite(
+                *m_textTex,
+                grimar::render::RectI{0, 0, m_textTex->Width(), m_textTex->Height()}, // full texture
+                grimar::render::RectF{200.f, 150.f, 256.f, 256.f  }, // world dst
+                5
+            );
+        } else {
+            GRIMAR_LOG_WARN("m_testTex is null");
+        }
+
+
+        m_renderer->DrawRect({160, 140, 200, 140},
+                    {220, 80, 80, 255},
+                    10);
 
         m_renderer->EndFrame();
     }

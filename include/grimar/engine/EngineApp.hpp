@@ -4,13 +4,14 @@
 #include <cstdint>
 #include <memory>
 
+#include "grimar/assets/Texture2D.hpp"
 #include "grimar/platform/Input.hpp"
 #include "grimar/platform/Window.hpp"
 #include "grimar/render/Renderer2D.hpp"
 
 #include "grimar/render/Camera2D.hpp"
 
-
+#include "grimar/assets/AssetManager.hpp"
 
 namespace grimar::engine {
 
@@ -64,5 +65,14 @@ namespace grimar::engine {
         std::unique_ptr<render::Renderer2D> m_renderer;
 
         grimar::render::Camera2D m_camera;
+
+        //for test
+        grimar::assets::Texture2D m_testTexture;
+
+        // for test
+        grimar::assets::AssetManager m_assets;
+
+        // for test
+        std::shared_ptr<grimar::assets::Texture2D> m_textTex;
     };
 }

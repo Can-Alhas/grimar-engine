@@ -9,7 +9,7 @@
 #include "grimar/render/Color.hpp"
 #include "grimar/render/Rect.hpp"
 
-
+namespace grimar::assets{ class Texture2D; }
 
 namespace grimar::platform {
     class Window;
@@ -47,6 +47,15 @@ namespace grimar::render {
         virtual void EndFrame() noexcept = 0;
 
         virtual void SetCamera(const Camera2D* camera) noexcept = 0;
+
+        // Backend-specific native handle (e.g SDL_Renderer*, OpenGL constext ptr, etc.)
+        virtual void* NativeHandle() noexcept = 0;
+
+        virtual void DrawSprite(const grimar::assets::Texture2D& texture,
+                                RectI src,
+                                RectF dst,
+                                Layer layer = 0) noexcept = 0;
+
 
     protected:
         Renderer2D() = default;

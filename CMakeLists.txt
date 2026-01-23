@@ -26,6 +26,10 @@ add_library(grimar_engine STATIC
         include/grimar/render/SdlRenderer2D.hpp
         src/render/SdlRenderer2D.cpp
         include/grimar/render/Camera2D.hpp
+        include/grimar/assets/Texture2D.hpp
+        src/assets/Texture2D.cpp
+        include/grimar/assets/AssetManager.hpp
+        src/assets/AssetManager.cpp
 
 )
 

@@ -6,11 +6,11 @@
 
 #include "grimar/render/Camera2D.hpp"
 
+#include "grimar/assets/Texture2D.hpp"
+
 struct SDL_Renderer;
 
 namespace grimar::render {
-
-
 
     class SdlRenderer2D final : public Renderer2D {
     public:
@@ -26,13 +26,24 @@ namespace grimar::render {
 
         void SetCamera(const Camera2D* camera) noexcept override;
 
+        void* NativeHandle() noexcept override;
+
+        void DrawSprite(const grimar::assets::Texture2D& texture,
+                        RectI src, RectF dst, Layer layer = 0) noexcept override;
+
     private:
         void Shutdown() noexcept;
 
         struct DrawCmd {
-            RectF rect;
-            Color color;
-            Layer layer;
+            enum class Type { Rect, Sprite } type{Type::Rect};
+
+            RectF rect{};
+            Color color{};
+            Layer layer{0};
+
+            // Sprite-specific
+            const grimar::assets::Texture2D* texture{nullptr};
+            RectI src{};
         };
     private:
         SDL_Renderer* m_renderer{nullptr};
