@@ -13,6 +13,10 @@
 
 #include "grimar/assets/AssetManager.hpp"
 
+#include "grimar/assets/SpriteSheet.hpp"
+
+
+
 namespace grimar::engine {
 
     struct EngineConfig {
@@ -74,5 +78,8 @@ namespace grimar::engine {
 
         // for test
         std::shared_ptr<grimar::assets::Texture2D> m_textTex;
+
+        // json falan
+        grimar::assets::SpriteSheet m_testSheet;
     };
 }

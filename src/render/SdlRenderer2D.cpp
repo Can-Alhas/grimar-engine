@@ -121,14 +121,6 @@ namespace grimar::render {
             SDL_RenderFillRectF(m_renderer, &r);
         }
         else if (cmd.type == DrawCmd::Type::Sprite) {
-
-            // ---- DEBUG MARKER:----
-            SDL_SetRenderDrawColor(m_renderer, 0, 255, 0, 255);
-            SDL_FRect marker{20.f, 20.f, 20.f, 20.f};
-            SDL_RenderFillRectF(m_renderer, &marker);
-            // debug
-
-            // ---- Validate texture ----
             if (!cmd.texture) {
                 GRIMAR_LOG_ERROR("Sprite cmd has null Texture2D pointer");
                 continue;
@@ -137,25 +129,24 @@ namespace grimar::render {
                 GRIMAR_LOG_ERROR("Sprite cmd has null SDL_Texture*");
                 continue;
             }
+            if (cmd.src.w <= 0 || cmd.src.h <= 0) {
+                GRIMAR_LOG_ERROR("Sprite cmd has invalid source rect");
+                continue;
+            }
 
+            SDL_Rect src{cmd.src.x, cmd.src.y, cmd.src.w, cmd.src.h};
             SDL_FRect dst{screen.x, screen.y, screen.w, screen.h};
 
-            // ---- DEBUG BYPASS: ignore srcRect and draw full texture ----
-            // If sprite appears with nullptr src, the bug is cmd.src values.
             const int rc = SDL_RenderCopyF(
                 m_renderer,
                 cmd.texture->NativeTexture(),
-                nullptr,   // ✅ full texture
+                &src,
                 &dst
             );
 
             if (rc != 0) {
                 GRIMAR_LOG_ERROR(SDL_GetError());
             }
-
-            // ---- Optional: log srcRect once (commented to avoid spam) ----
-            // GRIMAR_LOG_INFO("srcRect w/h check");
-            // GRIMAR_ASSERT(cmd.src.w > 0 && cmd.src.h > 0);
         }
     }
 
@@ -169,9 +160,6 @@ namespace grimar::render {
     }
 
     void SdlRenderer2D::DrawSprite(const grimar::assets::Texture2D& texture, RectI src, RectF dst,Layer layer) noexcept {
-
-        GRIMAR_LOG_INFO("DrawSprite queued");
-
         DrawCmd cmd{};
         cmd.type  = DrawCmd::Type::Sprite;
         cmd.rect  = dst;

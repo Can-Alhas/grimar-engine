@@ -30,6 +30,8 @@ add_library(grimar_engine STATIC
         src/assets/Texture2D.cpp
         include/grimar/assets/AssetManager.hpp
         src/assets/AssetManager.cpp
+	include/grimar/assets/SpriteSheet.hpp
+	src/assets/SpriteSheet.cpp
 
 )
 
@@ -47,6 +49,7 @@ find_package(SDL2 CONFIG REQUIRED)
 find_package(SDL2_image CONFIG REQUIRED)
 find_package(SDL2_ttf CONFIG REQUIRED)
 find_package(SDL2_mixer CONFIG REQUIRED)
+find_package(nlohmann_json CONFIG REQUIRED)
 
 target_link_libraries(grimar_engine PUBLIC
         $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
@@ -55,6 +58,10 @@ target_link_libraries(grimar_engine PUBLIC
         $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>
         $<IF:$<TARGET_EXISTS:SDL2_ttf::SDL2_ttf>,SDL2_ttf::SDL2_ttf,SDL2_ttf::SDL2_ttf-static>
         $<IF:$<TARGET_EXISTS:SDL2_mixer::SDL2_mixer>,SDL2_mixer::SDL2_mixer,SDL2_mixer::SDL2_mixer-static>
+)
+
+target_link_libraries(grimar_engine PRIVATE
+        nlohmann_json::nlohmann_json
 )
 
 # ---- Sandbox executable (boot) -----

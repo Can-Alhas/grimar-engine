@@ -98,6 +98,14 @@ namespace grimar::engine {
             GRIMAR_LOG_INFO("test.png loaded (cached)");
         }
 
+
+        if (!m_testSheet.Load(m_assets, *m_renderer, "assets/test.sprites.json")) {
+            GRIMAR_LOG_WARN("test sprite sheet failed to load");
+        } else {
+            GRIMAR_LOG_INFO("test sprite sheet loaded");
+        }
+
+        
         /*if (!m_testTexture.LoadFromFile(*m_renderer, "assets/test.png")) {
             GRIMAR_LOG_WARN("test.png failed to load (check path)");
         } else {
@@ -322,7 +330,7 @@ namespace grimar::engine {
 
 
 
-
+        /* old example
         if (m_textTex) {
             m_renderer->DrawSprite(
                 *m_textTex,
@@ -333,7 +341,19 @@ namespace grimar::engine {
         } else {
             GRIMAR_LOG_WARN("m_testTex is null");
         }
-
+        */
+        
+        const auto* frame = m_testSheet.GetFrame("player_idle_0");
+        if (frame && frame->texture) {
+            m_renderer->DrawSprite(
+                *frame->texture,
+                frame->srcRect,
+                grimar::render::RectF{200.f, 150.f, 256.f, 256.f},
+                5
+                );
+        } else {
+            GRIMAR_LOG_WARN("player_idle_0 frame not found");
+        }
 
         m_renderer->DrawRect({160, 140, 200, 140},
                     {220, 80, 80, 255},

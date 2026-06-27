@@ -1,0 +1,17 @@
+{
+    "texture": "assets/test.png",
+    "sprites": {
+
+	"player_idle_0": {
+	    "x": 0,
+	    "y": 0,
+	    "w": 219,
+	    "h": 230
+	}
+	
+    }
+
+
+
+    
+}

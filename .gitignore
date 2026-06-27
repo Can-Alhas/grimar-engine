@@ -52,6 +52,8 @@ cmake_install.cmake
 ############################
 *.log
 *.tmp
+EngineDev/
+\#*\#
 
 ############################
 # OS junk
@@ -63,3 +65,5 @@ Thumbs.db
 # Optional: assets cache (ileride eklenirse)
 ############################
 # assets/cache/
+*~
+
