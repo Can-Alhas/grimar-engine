@@ -30,8 +30,16 @@ add_library(grimar_engine STATIC
         src/assets/Texture2D.cpp
         include/grimar/assets/AssetManager.hpp
         src/assets/AssetManager.cpp
-	include/grimar/assets/SpriteSheet.hpp
-	src/assets/SpriteSheet.cpp
+	    include/grimar/assets/SpriteSheet.hpp
+	    src/assets/SpriteSheet.cpp
+	    include/grimar/assets/Animation2D.hpp
+	    src/assets/Animation2D.cpp
+		include/grimar/engine/Entity.hpp
+
+		include/grimar/engine/World.hpp
+		src/engine/World.cpp
+		include/grimar/engine/components/Transform2D.hpp
+		include/grimar/core/Math2D.hpp
 
 )
 

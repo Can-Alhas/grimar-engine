@@ -4,12 +4,12 @@
 
 #include <cstdint>
 
+#include "grimar/core/Math2D.hpp"
+
 namespace grimar::render {
 
-    struct Vec2f {
-        float x{0.f};
-        float y{0.f};
-    };
+    // type alias for Vec2
+    using Vec2f = grimar::core::Vec2f;
 
 
     class Camera2D {

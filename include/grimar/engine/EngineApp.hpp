@@ -15,6 +15,7 @@
 
 #include "grimar/assets/SpriteSheet.hpp"
 
+#include "grimar/assets/Animation2D.hpp"
 
 
 namespace grimar::engine {
@@ -81,5 +82,9 @@ namespace grimar::engine {
 
         // json falan
         grimar::assets::SpriteSheet m_testSheet;
+
+        //Animation
+        grimar::assets::AnimationClip  m_idleClip;
+        grimar::assets::AnimationState m_idleAnim;
     };
 }

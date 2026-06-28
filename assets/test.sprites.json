@@ -1,17 +1,8 @@
 {
-    "texture": "assets/test.png",
-    "sprites": {
-
-	"player_idle_0": {
-	    "x": 0,
-	    "y": 0,
-	    "w": 219,
-	    "h": 230
-	}
-	
-    }
-
-
-
-    
+  "texture": "assets/test.png",
+  "sprites": {
+    "player_idle_0": { "x": 0, "y": 0, "w": 64, "h": 64 },
+    "player_idle_1": { "x": 64, "y": 0, "w": 64, "h": 64 },
+    "player_idle_2": { "x": 128, "y": 0, "w": 64, "h": 64 }
+  }
 }
