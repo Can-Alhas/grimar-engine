@@ -300,6 +300,8 @@ namespace grimar::engine {
 
             GRIMAR_LOG_INFO("World SpriteRenderer storage tests OK");
         }
+
+
         if (!InitSDL()) {
             GRIMAR_LOG_ERROR("EngineApp::InitSDL failed");
             return false;
@@ -357,12 +359,45 @@ namespace grimar::engine {
             m_idleClip.frames.push_back({"player_idle_0", 0.20});
             m_idleClip.frames.push_back({"player_idle_1", 0.20});
             m_idleClip.frames.push_back({"player_idle_2", 0.20});
-            
+
             m_idleAnim.SetClip(&m_idleClip);
+
+            // entity 1
+            auto entity = m_world.CreateEntity();
+
+            grimar::engine::Transform2D transform{};
+            transform.SetPosition(200.f, 150.f);
+
+            grimar::engine::SpriteRenderer sprite{};
+            sprite.SetSprite("player_idle_0");
+            sprite.SetSize(256.f, 256.f);
+            sprite.layer = 5;
+            sprite.visible = true;
+
+            GRIMAR_ASSERT(m_world.AddTransform(entity, transform));
+            GRIMAR_ASSERT(m_world.AddSpriteRenderer(entity, sprite));
+
+            // entity 2
+            auto entity2 = m_world.CreateEntity();
+
+            grimar::engine::Transform2D transform2{};
+            transform2.SetPosition(420.f, 150.f);
+
+            grimar::engine::SpriteRenderer sprite2{};
+            sprite2.SetSprite("player_idle_1");
+            sprite2.SetSize(256.f, 256.f);
+            sprite2.layer = 4;
+            sprite2.visible = true;
+
+            GRIMAR_ASSERT(m_world.AddTransform(entity2, transform2));
+            GRIMAR_ASSERT(m_world.AddSpriteRenderer(entity2, sprite2));
+
+
+            GRIMAR_LOG_INFO("World demo sprite entity created");
         }
 
 
-        
+
 
         
         /*if (!m_testTexture.LoadFromFile(*m_renderer, "assets/test.png")) {
@@ -594,33 +629,11 @@ namespace grimar::engine {
 
 
 
-        /* old example
-        if (m_textTex) {
-            m_renderer->DrawSprite(
-                *m_textTex,
-                grimar::render::RectI{0, 0, m_textTex->Width(), m_textTex->Height()}, // full texture
-                grimar::render::RectF{200.f, 150.f, 256.f, 256.f  }, // world dst
-                5
-            );
-        } else {
-            GRIMAR_LOG_WARN("m_testTex is null");
-        }
-        */
-        
-        //const auto* frame = m_testSheet.GetFrame("player_idle_0"); old
-        
-        const auto* frame = m_idleAnim.CurrentSprite(m_testSheet);
-        if (frame && frame->texture) {
-            m_renderer->DrawSprite(
-                *frame->texture,
-                frame->srcRect,
-                grimar::render::RectF{200.f, 150.f, 256.f, 256.f},
-                5
-                );
-        } else {
-            
-            GRIMAR_LOG_WARN("animation frame not found");
-        }
+        m_renderSystem.Render(m_world, m_testSheet, *m_renderer);
+
+
+
+
 
         m_renderer->DrawRect({160, 140, 200, 140},
                     {220, 80, 80, 255},

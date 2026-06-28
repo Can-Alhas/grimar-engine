@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <memory>
 
+
 #include "grimar/assets/Texture2D.hpp"
 #include "grimar/platform/Input.hpp"
 #include "grimar/platform/Window.hpp"
@@ -16,6 +17,10 @@
 #include "grimar/assets/SpriteSheet.hpp"
 
 #include "grimar/assets/Animation2D.hpp"
+
+#include "grimar/engine/World.hpp"
+
+#include "grimar/engine/systems/RenderSystem.hpp"
 
 
 namespace grimar::engine {
@@ -86,5 +91,11 @@ namespace grimar::engine {
         //Animation
         grimar::assets::AnimationClip  m_idleClip;
         grimar::assets::AnimationState m_idleAnim;
+
+        //Game world / scene state
+        grimar::engine::World m_world{};
+
+        //
+        grimar::engine::RenderSystem m_renderSystem;
     };
 }
