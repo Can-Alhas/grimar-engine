@@ -33,6 +33,9 @@ namespace grimar::engine {
         // Bu entity'ye bagli component'leri de siliyoruz.
         // Boylece destroy edilmis entity render/physics sistemlerinde kalmaz.
         m_transforms.erase(entity.id);
+        //
+        m_spriteRenderers.erase(entity.id);
+
 
         // Generation artiriyoruz.
         // Bu sayede eski handle stale hale gelir.
@@ -64,6 +67,7 @@ namespace grimar::engine {
         return m_generations[entity.id] == entity.generation;
     }
 
+#pragma region Transform functions impl
     bool World::AddTransform(Entity entity, Transform2D transform) noexcept {
         if (!IsAlive(entity)) {
             return false;
@@ -111,6 +115,8 @@ namespace grimar::engine {
         return &it->second;
     }
 
+
+
     bool World::RemoveTransform(Entity entity) noexcept {
         if (!IsAlive(entity)) {
             return false;
@@ -118,4 +124,63 @@ namespace grimar::engine {
 
         return m_transforms.erase(entity.id) > 0;
     }
+
+#pragma endregion
+
+#pragma region SpriteRenderer functions impl
+    bool World::AddSpriteRenderer(Entity entity, SpriteRenderer spriteRenderer) noexcept {
+        if (!IsAlive(entity)) {
+            return false;
+        }
+
+        // insert_or_assign:
+        //component yoksa ekler
+        // varsa mevcut componenti  yeni degerle degisir
+        m_spriteRenderers.insert_or_assign(entity.id, spriteRenderer);
+        return true;
+    }
+
+    bool World::HasSpriteRenderer(Entity entity) const noexcept {
+        if (!IsAlive(entity)) {
+            return false;
+        }
+
+        return m_spriteRenderers.find(entity.id) != m_spriteRenderers.end();
+    }
+
+    SpriteRenderer* World::GetSpriteRenderer(Entity entity) noexcept {
+        if (!IsAlive(entity)) {
+            return nullptr;
+        }
+
+        auto it = m_spriteRenderers.find(entity.id);
+        if ( it == m_spriteRenderers.end()) {
+            return nullptr;
+        }
+
+        return &it->second;
+    }
+
+    const SpriteRenderer *World::GetSpriteRenderer(Entity entity) const noexcept {
+        if (!IsAlive(entity)) {
+            return nullptr;
+        }
+
+        auto it = m_spriteRenderers.find(entity.id);
+        if ( it == m_spriteRenderers.end()) {
+            return nullptr;
+        }
+
+        return &it->second;
+    }
+
+    bool World::RemoveSpriteRenderer(Entity entity) noexcept {
+        if (!IsAlive(entity)) {
+            return false;
+        }
+
+        return m_spriteRenderers.erase(entity.id) > 0;
+    }
+
+#pragma endregion
 }

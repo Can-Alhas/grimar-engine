@@ -6,8 +6,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include "grimar/engine/components/Transform2D.hpp"
 #include "grimar/engine/Entity.hpp"
+#include "grimar/engine/components/Transform2D.hpp"
+#include "grimar/engine/components/SpriteRenderer.hpp"
+
+
+
 
 namespace grimar::engine {
 
@@ -28,6 +32,7 @@ namespace grimar::engine {
             return m_aliveCount;
         }
 
+#pragma region Transform Functions
         // Transform2D component ekler veya varsa mevcut Transform2D'yi degistirir.
         // Sadece alive entity'lere component ekliyoruz.
         // Dead/stale entity gelirse false doner.
@@ -52,7 +57,6 @@ namespace grimar::engine {
         // Transform2D olan entity'leri gezer.
         // Callback entity ve transform referansi alir.
         // Transform referans oldugu icin callback icinde component degistirilebilir.
-
         template <typename Fn>
         void ForEachTransform(Fn&& fn) {
             for (auto& [id, transform] : m_transforms) {
@@ -67,6 +71,49 @@ namespace grimar::engine {
                 fn(entity, transform);
             }
         }
+#pragma endregion
+
+
+#pragma region SpriteRenderer Functions
+
+        // SpriteRenderer component ekler veya varsa mevcut SpriteRenderer'i degistirir.
+        // Sadece alive entity'lere component ekliyoruz.
+        // Dead/stale entity gelirse false doner.
+        bool AddSpriteRenderer(Entity entity, SpriteRenderer spriteRenderer) noexcept;
+
+        // Entity'de SpriteRenderer var mi diye bakar.
+        // Entity alive degilse false doner.
+        [[nodiscard]] bool HasSpriteRenderer(Entity entity) const noexcept;
+
+        // Entity'nin SpriteRenderer component'ini pointer olarak dondurur.
+        // Yoksa nullptr doner.
+        [[nodiscard]] SpriteRenderer* GetSpriteRenderer(Entity entity) noexcept;
+
+        // Const World uzerinden SpriteRenderer okumak icin const overload.
+        [[nodiscard]] const SpriteRenderer* GetSpriteRenderer(Entity entity) const noexcept;
+
+        // Entity'nin SpriteRenderer component'ini siler.
+        // Gercekten silindiyse true, yoksa false doner.
+        bool RemoveSpriteRenderer(Entity entity) noexcept;
+
+        // SpriteRenderer olan entity'leri gezer.
+        // Callback entity ve SpriteRenderer referansi alir.
+        template <typename Fn>
+        void ForEachSpriteRenderer(Fn&& fn) {
+            for (auto& [id, spriteRenderer] : m_spriteRenderers) {
+                Entity entity{id, m_generations[id]};
+
+                // Destroy edilmis/stale entity'leri callback'e gondermiyoruz.
+                if (!IsAlive(entity)) {
+                    continue;
+                }
+
+                fn(entity, spriteRenderer);
+            }
+        }
+
+
+#pragma endregion
 
     private:
         // Her entity id icin aktif generation degerini tutar.
@@ -85,6 +132,13 @@ namespace grimar::engine {
         // Generic ECS degil; once tek component mantigi
 
         std::unordered_map<Entity::Id, Transform2D> m_transforms{};
+
+        // MVP SpriteRenderer component storage:
+        // Entity id -> SpriteRenderer.
+        //
+        // Bu da Transform2D gibi unordered_map ile basliyor.
+        // Ileride dense/sparse storage'a gecilebilir.
+        std::unordered_map<Entity::Id, SpriteRenderer> m_spriteRenderers{};
 
 
     };

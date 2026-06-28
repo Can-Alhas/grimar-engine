@@ -40,6 +40,7 @@ add_library(grimar_engine STATIC
 		src/engine/World.cpp
 		include/grimar/engine/components/Transform2D.hpp
 		include/grimar/core/Math2D.hpp
+		include/grimar/engine/components/SpriteRenderer.hpp
 
 )
 

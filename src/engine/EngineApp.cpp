@@ -22,6 +22,8 @@
 
 #include "grimar/engine/components/Transform2D.hpp"
 
+#include "grimar/engine/components/SpriteRenderer.hpp"
+
 namespace grimar::engine {
 
     // for tests
@@ -228,6 +230,75 @@ namespace grimar::engine {
             GRIMAR_ASSERT(!world.IsAlive(oldEntity));
 
             GRIMAR_LOG_INFO("World stale generation reuse test OK");
+        }
+
+        //SpriteRenderer component test
+        {
+            grimar::engine::SpriteRenderer sprite{};
+            GRIMAR_ASSERT(sprite.spriteName.empty());
+            GRIMAR_ASSERT(sprite.size.x == 1.f);
+            GRIMAR_ASSERT(sprite.size.y == 1.f);
+            GRIMAR_ASSERT(sprite.layer == 0);
+            GRIMAR_ASSERT(sprite.visible);
+
+            sprite.SetSprite("player_idle_0");
+            sprite.SetSize(256.f, 128.f);
+            sprite.layer = 5;
+            sprite.visible = false;
+
+            GRIMAR_ASSERT(sprite.spriteName == "player_idle_0");
+            GRIMAR_ASSERT(sprite.size.x == 256.f);
+            GRIMAR_ASSERT(sprite.size.y == 128.f);
+            GRIMAR_ASSERT(sprite.layer == 5);
+            GRIMAR_ASSERT(!sprite.visible);
+
+            GRIMAR_LOG_INFO("SpriteRenderer component tests OK");
+        }
+
+        // World Sprite renderer storage tests
+        {
+            grimar::engine::World world{};
+
+            auto entity = world.CreateEntity();
+
+            grimar::engine::SpriteRenderer sprite{};
+            sprite.SetSprite("player_idle_0");
+            sprite.SetSize(256.f, 256.f);
+            sprite.layer = 5;
+            sprite.visible = true;
+
+            GRIMAR_ASSERT(world.AddSpriteRenderer(entity, sprite));
+            GRIMAR_ASSERT(world.HasSpriteRenderer(entity));
+
+            auto* stored = world.GetSpriteRenderer(entity);
+            GRIMAR_ASSERT(stored != nullptr);
+            GRIMAR_ASSERT(stored->spriteName == "player_idle_0");
+            GRIMAR_ASSERT(stored->size.x == 256.f);
+            GRIMAR_ASSERT(stored->size.y == 256.f);
+            GRIMAR_ASSERT(stored->layer == 5);
+            GRIMAR_ASSERT(stored->visible);
+
+            int visited = 0;
+            world.ForEachSpriteRenderer([&](grimar::engine::Entity e,
+                                            grimar::engine::SpriteRenderer& sr) {
+                GRIMAR_ASSERT(e == entity);
+                GRIMAR_ASSERT(sr.spriteName == "player_idle_0");
+
+                sr.layer = 10;
+                ++visited;
+            });
+
+            GRIMAR_ASSERT(visited == 1);
+            GRIMAR_ASSERT(stored->layer == 10);
+
+            GRIMAR_ASSERT(world.RemoveSpriteRenderer(entity));
+            GRIMAR_ASSERT(!world.HasSpriteRenderer(entity));
+            GRIMAR_ASSERT(world.GetSpriteRenderer(entity) == nullptr);
+
+            world.DestroyEntity(entity);
+            GRIMAR_ASSERT(!world.AddSpriteRenderer(entity, sprite));
+
+            GRIMAR_LOG_INFO("World SpriteRenderer storage tests OK");
         }
         if (!InitSDL()) {
             GRIMAR_LOG_ERROR("EngineApp::InitSDL failed");
