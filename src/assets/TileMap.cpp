@@ -4,10 +4,12 @@
 
 #include <exception>
 #include <fstream>
+#include <utility>
 
 #include <nlohmann/json.hpp>
 
 #include "grimar/core/Log.hpp"
+#include "grimar/platform/FileSystem.hpp"
 
 namespace grimar::assets {
     namespace {
@@ -27,6 +29,34 @@ namespace grimar::assets {
 
             return true;
         }
+
+        [[nodiscard]] bool IsPositiveGrid(int width,
+                                          int height,
+                                          int tileWidth,
+                                          int tileHeight) noexcept {
+            return width > 0 && height > 0 && tileWidth > 0 && tileHeight > 0;
+        }
+    }
+
+    bool TileMap::Create(int width,
+                         int height,
+                         int tileWidth,
+                         int tileHeight,
+                         std::string spriteSheetPath) noexcept {
+        Clear();
+
+        if (!IsPositiveGrid(width, height, tileWidth, tileHeight)) {
+            GRIMAR_LOG_ERROR("TileMap::Create failed: dimensions must be positive");
+            return false;
+        }
+
+        m_width = width;
+        m_height = height;
+        m_tileWidth = tileWidth;
+        m_tileHeight = tileHeight;
+        m_spriteSheetPath = std::move(spriteSheetPath);
+        m_data.assign(static_cast<std::size_t>(m_width * m_height), 0);
+        return true;
     }
 
     bool TileMap::Load(const std::string& jsonPath) noexcept {
@@ -129,6 +159,54 @@ namespace grimar::assets {
         }
     }
 
+    bool TileMap::Save(const std::string& jsonPath) const noexcept {
+        if (!IsPositiveGrid(m_width, m_height, m_tileWidth, m_tileHeight)) {
+            GRIMAR_LOG_ERROR("TileMap::Save failed: tilemap is empty");
+            return false;
+        }
+
+        if (m_data.size() != static_cast<std::size_t>(m_width * m_height)) {
+            GRIMAR_LOG_ERROR("TileMap::Save failed: data size does not match dimensions");
+            return false;
+        }
+
+        try {
+            nlohmann::json data{};
+            data["width"] = m_width;
+            data["height"] = m_height;
+            data["tileWidth"] = m_tileWidth;
+            data["tileHeight"] = m_tileHeight;
+            data["spriteSheet"] = m_spriteSheetPath;
+            data["tiles"] = nlohmann::json::object();
+
+            for (const auto& [id, definition] : m_definitions) {
+                data["tiles"][std::to_string(id)] = {
+                    {"sprite", definition.spriteName},
+                    {"solid", definition.solid}
+                };
+            }
+
+            data["data"] = m_data;
+
+            if (!grimar::platform::EnsureParentDirectory(jsonPath)) {
+                GRIMAR_LOG_ERROR("TileMap::Save failed: parent directory could not be created");
+                return false;
+            }
+
+            std::ofstream file(jsonPath);
+            if (!file.is_open()) {
+                GRIMAR_LOG_ERROR("TileMap::Save failed: could not open json file");
+                return false;
+            }
+
+            file << data.dump(4);
+            return true;
+        } catch (const std::exception&) {
+            GRIMAR_LOG_ERROR("TileMap::Save failed: json write error");
+            return false;
+        }
+    }
+
     void TileMap::Clear() noexcept {
         m_width = 0;
         m_height = 0;
@@ -137,6 +215,37 @@ namespace grimar::assets {
         m_spriteSheetPath.clear();
         m_data.clear();
         m_definitions.clear();
+    }
+
+    void TileMap::SetSpriteSheetPath(std::string spriteSheetPath) noexcept {
+        m_spriteSheetPath = std::move(spriteSheetPath);
+    }
+
+    bool TileMap::SetDefinition(TileId id, TileDefinition definition) noexcept {
+        if (id <= 0) {
+            return false;
+        }
+
+        m_definitions.insert_or_assign(id, std::move(definition));
+        return true;
+    }
+
+    bool TileMap::SetTile(int x, int y, TileId id) noexcept {
+        if (x < 0 || y < 0 || x >= m_width || y >= m_height) {
+            return false;
+        }
+
+        if (id != 0 && m_definitions.find(id) == m_definitions.end()) {
+            return false;
+        }
+
+        const auto index = static_cast<std::size_t>((y * m_width) + x);
+        if (index >= m_data.size()) {
+            return false;
+        }
+
+        m_data[index] = id;
+        return true;
     }
 
     TileId TileMap::TileAt(int x, int y) const noexcept {

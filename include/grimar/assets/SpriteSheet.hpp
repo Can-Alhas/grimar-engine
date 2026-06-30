@@ -20,6 +20,18 @@ namespace grimar::assets {
         grimar::render::RectI srcRect{};
     };
 
+    struct SpriteSheetGridDesc {
+        std::string texturePath{};
+        int textureWidth{0};
+        int textureHeight{0};
+        int tileWidth{0};
+        int tileHeight{0};
+        std::string spritePrefix{"tile"};
+    };
+
+    bool SaveSpriteSheetGridJson(const SpriteSheetGridDesc& desc,
+                                 const std::string& jsonPath) noexcept;
+
     class SpriteSheet {
     public:
         SpriteSheet() = default;
@@ -33,6 +45,13 @@ namespace grimar::assets {
                   const std::string& jsonPath) noexcept;
 
         [[nodiscard]] const SpriteFrame* GetFrame(const std::string& name) const noexcept;
+
+        template <typename Fn>
+        void ForEachFrame(Fn&& fn) const {
+            for (const auto& [name, frame] : m_frames) {
+                fn(name, frame);
+            }
+        }
 
         void Clear() noexcept;
 

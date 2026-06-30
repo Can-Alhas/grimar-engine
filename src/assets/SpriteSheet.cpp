@@ -7,6 +7,7 @@
 #include "grimar/assets/AssetManager.hpp"
 #include "grimar/assets/Texture2D.hpp"
 #include "grimar/core/Log.hpp"
+#include "grimar/platform/FileSystem.hpp"
 #include "grimar/render/Renderer2D.hpp"
 
 #include <fstream>
@@ -19,6 +20,62 @@
 
 namespace grimar::assets {
 
+    bool SaveSpriteSheetGridJson(const SpriteSheetGridDesc& desc,
+                                 const std::string& jsonPath) noexcept {
+        if (desc.texturePath.empty() ||
+            desc.textureWidth <= 0 ||
+            desc.textureHeight <= 0 ||
+            desc.tileWidth <= 0 ||
+            desc.tileHeight <= 0 ||
+            desc.spritePrefix.empty()) {
+            GRIMAR_LOG_ERROR("SaveSpriteSheetGridJson failed: invalid grid description");
+            return false;
+        }
+
+        const int columns = desc.textureWidth / desc.tileWidth;
+        const int rows = desc.textureHeight / desc.tileHeight;
+        if (columns <= 0 || rows <= 0) {
+            GRIMAR_LOG_ERROR("SaveSpriteSheetGridJson failed: tile size is larger than texture");
+            return false;
+        }
+
+        try {
+            nlohmann::json data{};
+            data["texture"] = desc.texturePath;
+            data["sprites"] = nlohmann::json::object();
+
+            int index = 0;
+            for (int y = 0; y < rows; ++y) {
+                for (int x = 0; x < columns; ++x) {
+                    const std::string name = desc.spritePrefix + "_" + std::to_string(index);
+                    data["sprites"][name] = {
+                        {"x", x * desc.tileWidth},
+                        {"y", y * desc.tileHeight},
+                        {"w", desc.tileWidth},
+                        {"h", desc.tileHeight}
+                    };
+                    ++index;
+                }
+            }
+
+            if (!grimar::platform::EnsureParentDirectory(jsonPath)) {
+                GRIMAR_LOG_ERROR("SaveSpriteSheetGridJson failed: parent directory could not be created");
+                return false;
+            }
+
+            std::ofstream file(jsonPath);
+            if (!file.is_open()) {
+                GRIMAR_LOG_ERROR("SaveSpriteSheetGridJson failed: could not open json file");
+                return false;
+            }
+
+            file << data.dump(4);
+            return true;
+        } catch (const std::exception&) {
+            GRIMAR_LOG_ERROR("SaveSpriteSheetGridJson failed: json write error");
+            return false;
+        }
+    }
 
     bool SpriteSheet::Load(AssetManager& assets,
                            grimar::render::Renderer2D& renderer,
@@ -28,7 +85,10 @@ namespace grimar::assets {
         Clear();
 
         try {
-            std::ifstream file(jsonPath);
+            const std::string resolvedJsonPath = grimar::platform::ResolveExistingPath(jsonPath);
+            const std::string loadPath = resolvedJsonPath.empty() ? jsonPath : resolvedJsonPath;
+
+            std::ifstream file(loadPath);
             if(!file.is_open()) {
                 GRIMAR_LOG_ERROR("SpriteSheet::Load failed: could not open json file");
                 return false;
@@ -48,7 +108,11 @@ namespace grimar::assets {
                 return false;
             }
 
-            const std::string texturePath = data["texture"].get<std::string>();
+            const std::string texturePathRaw = data["texture"].get<std::string>();
+            const std::string resolvedTexturePath =
+                grimar::platform::ResolveExistingPathRelativeTo(loadPath, texturePathRaw);
+            const std::string texturePath =
+                resolvedTexturePath.empty() ? texturePathRaw : resolvedTexturePath;
 
             m_texture = assets.LoadTexture(renderer, texturePath);
             if(!m_texture) {

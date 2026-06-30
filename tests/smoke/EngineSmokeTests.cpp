@@ -1,12 +1,19 @@
 // ~ Grimar Engine ~
 #include "EngineSmokeTests.hpp"
 
+#include <cstdio>
+#include <cstdlib>
+#include <exception>
+#include <filesystem>
+#include <fstream>
+#include <string>
 #include <vector>
 
 #include "grimar/core/Assert.hpp"
 #include "grimar/core/Log.hpp"
 #include "grimar/assets/AssetManager.hpp"
 #include "grimar/assets/Animation2D.hpp"
+#include "grimar/assets/SpriteSheet.hpp"
 #include "grimar/assets/TileMap.hpp"
 #include "grimar/engine/ComponentStorage.hpp"
 #include "grimar/engine/EngineConfig.hpp"
@@ -23,10 +30,31 @@
 #include "grimar/engine/systems/CharacterControllerSystem.hpp"
 #include "grimar/engine/systems/PhysicsSystem.hpp"
 #include "grimar/engine/systems/TileMapSystem.hpp"
+#include "grimar/platform/FileSystem.hpp"
 #include "grimar/platform/Input.hpp"
 #include "grimar/render/Renderer2D.hpp"
 
 namespace {
+
+    [[nodiscard]] std::string TempPath(const char* filename) {
+        const char* temp = std::getenv("TEMP");
+        if (!temp) {
+            temp = std::getenv("TMP");
+        }
+
+        if (!temp) {
+            return std::string(filename);
+        }
+
+        return std::string(temp) + "/" + filename;
+    }
+
+    [[nodiscard]] std::string ReadTextFile(const std::string& path) {
+        std::ifstream file(path);
+        std::string content{};
+        std::getline(file, content, '\0');
+        return content;
+    }
 
     class NullRenderer2D final : public grimar::render::Renderer2D {
     public:
@@ -393,6 +421,7 @@ namespace grimar::engine {
             scene.OnFixedUpdate(context, 1.0 / 60.0);
             scene.OnUpdate(context, 0.25);
             scene.OnRender(context, 0.5);
+            scene.OnImGui(context);
 
             GRIMAR_ASSERT(scene.fixedUpdateCount == 1);
             GRIMAR_ASSERT(scene.updateCount == 1);
@@ -406,6 +435,123 @@ namespace grimar::engine {
             GRIMAR_ASSERT(scene.GetWorld().AliveCount() == 0);
 
             GRIMAR_LOG_INFO("Scene lifecycle interface tests OK");
+        }
+
+        // Mouse input state tests
+        {
+            grimar::platform::Input input{};
+
+            input.SetMousePosition(12.f, 34.f);
+            GRIMAR_ASSERT(input.MousePosition().x == 12.f);
+            GRIMAR_ASSERT(input.MousePosition().y == 34.f);
+
+            input.SetMouseButtonDown(grimar::platform::MouseButton::Left, true);
+            GRIMAR_ASSERT(input.IsMouseButtonDown(grimar::platform::MouseButton::Left));
+            GRIMAR_ASSERT(input.WasMouseButtonPressed(grimar::platform::MouseButton::Left));
+            GRIMAR_ASSERT(!input.WasMouseButtonReleased(grimar::platform::MouseButton::Left));
+
+            input.BeginFrame();
+            GRIMAR_ASSERT(input.IsMouseButtonDown(grimar::platform::MouseButton::Left));
+            GRIMAR_ASSERT(!input.WasMouseButtonPressed(grimar::platform::MouseButton::Left));
+
+            input.SetMouseButtonDown(grimar::platform::MouseButton::Left, false);
+            GRIMAR_ASSERT(!input.IsMouseButtonDown(grimar::platform::MouseButton::Left));
+            GRIMAR_ASSERT(input.WasMouseButtonReleased(grimar::platform::MouseButton::Left));
+
+            input.AddMouseWheel(1.f, -2.f);
+            GRIMAR_ASSERT(input.MouseWheel().x == 1.f);
+            GRIMAR_ASSERT(input.MouseWheel().y == -2.f);
+
+            input.BeginFrame();
+            GRIMAR_ASSERT(input.MouseWheel().x == 0.f);
+            GRIMAR_ASSERT(input.MouseWheel().y == 0.f);
+
+            input.SetKeyDown(grimar::platform::Key::Ctrl, true);
+            input.SetKeyDown(grimar::platform::Key::Alt, true);
+            input.SetKeyDown(grimar::platform::Key::Shift, true);
+            input.SetKeyDown(grimar::platform::Key::B, true);
+            input.SetKeyDown(grimar::platform::Key::E, true);
+            input.SetKeyDown(grimar::platform::Key::I, true);
+            input.SetKeyDown(grimar::platform::Key::O, true);
+            input.SetKeyDown(grimar::platform::Key::R, true);
+
+            GRIMAR_ASSERT(input.IsKeyDown(grimar::platform::Key::Ctrl));
+            GRIMAR_ASSERT(input.IsKeyDown(grimar::platform::Key::Alt));
+            GRIMAR_ASSERT(input.IsKeyDown(grimar::platform::Key::Shift));
+            GRIMAR_ASSERT(input.WasKeyPressed(grimar::platform::Key::B));
+            GRIMAR_ASSERT(input.WasKeyPressed(grimar::platform::Key::E));
+            GRIMAR_ASSERT(input.WasKeyPressed(grimar::platform::Key::I));
+            GRIMAR_ASSERT(input.WasKeyPressed(grimar::platform::Key::O));
+            GRIMAR_ASSERT(input.WasKeyPressed(grimar::platform::Key::R));
+
+            GRIMAR_LOG_INFO("Mouse input state tests OK");
+        }
+
+        // Editor-safe path helper tests
+        {
+            const auto root = std::filesystem::absolute(
+                std::filesystem::path(TempPath("grimar_editor_path_helper_test"))
+            );
+            const auto filePath = root / "maps" / "untitled.tilemap.json";
+            const auto assetPath = root / "assets" / "test.png";
+            const auto sheetPath = root / "sheets" / "sheet.json";
+            const auto relativeTexturePath = root / "sheets" / "tiles.png";
+            const auto fakeBuildPath = root / "cmake-build-debug" / "Debug";
+
+            std::filesystem::remove_all(root);
+
+            GRIMAR_ASSERT(grimar::platform::IsAbsolutePath(root.string()));
+            GRIMAR_ASSERT(grimar::platform::JoinPath(root.string(), "maps").find("maps") != std::string::npos);
+            GRIMAR_ASSERT(grimar::platform::EnsureParentDirectory(filePath.string()));
+            GRIMAR_ASSERT(std::filesystem::is_directory(root / "maps"));
+
+            {
+                std::ofstream file(filePath);
+                file << "{}";
+            }
+
+            GRIMAR_ASSERT(grimar::platform::FileExists(filePath.string()));
+
+            std::filesystem::create_directories(assetPath.parent_path());
+            std::filesystem::create_directories(sheetPath.parent_path());
+            std::filesystem::create_directories(fakeBuildPath);
+
+            {
+                std::ofstream file(assetPath);
+                file << "png";
+            }
+            {
+                std::ofstream file(relativeTexturePath);
+                file << "png";
+            }
+            {
+                std::ofstream file(sheetPath);
+                file << "{}";
+            }
+
+            const auto oldPath = std::filesystem::current_path();
+            std::string resolvedFromBuild{};
+            std::string resolvedRelativeToSheet{};
+            try {
+                std::filesystem::current_path(fakeBuildPath);
+                resolvedFromBuild = grimar::platform::ResolveExistingPath("assets/test.png");
+                resolvedRelativeToSheet = grimar::platform::ResolveExistingPathRelativeTo(
+                    sheetPath.string(),
+                    "tiles.png"
+                );
+                std::filesystem::current_path(oldPath);
+            } catch (const std::exception&) {
+                std::filesystem::current_path(oldPath);
+            }
+
+            GRIMAR_ASSERT(!resolvedFromBuild.empty());
+            GRIMAR_ASSERT(grimar::platform::FileExists(resolvedFromBuild));
+            GRIMAR_ASSERT(!resolvedRelativeToSheet.empty());
+            GRIMAR_ASSERT(grimar::platform::FileExists(resolvedRelativeToSheet));
+
+            std::filesystem::remove_all(root);
+
+            GRIMAR_LOG_INFO("Editor-safe path helper tests OK");
         }
 
         //SpriteRenderer component test
@@ -979,6 +1125,117 @@ namespace grimar::engine {
             GRIMAR_ASSERT(!tileMap.IsSolidAt(0, 1));
 
             GRIMAR_LOG_INFO("TileMap JSON data tests OK");
+        }
+
+        // TileMap authoring/save/load tests
+        {
+            const std::string roundtripPath = TempPath("grimar_tilemap_roundtrip.json");
+            const std::string badPath = TempPath("grimar_tilemap_bad.json");
+            const auto nestedRoot = std::filesystem::absolute(
+                std::filesystem::path(TempPath("grimar_tilemap_roundtrip_nested"))
+            );
+            const std::string nestedRoundtripPath =
+                (nestedRoot / "maps" / "roundtrip.tilemap.json").string();
+
+            std::filesystem::remove_all(nestedRoot);
+
+            grimar::assets::TileMap tileMap{};
+            GRIMAR_ASSERT(tileMap.Create(3, 2, 16, 16, "assets/editor.sprites.json"));
+            GRIMAR_ASSERT(tileMap.Width() == 3);
+            GRIMAR_ASSERT(tileMap.Height() == 2);
+            GRIMAR_ASSERT(tileMap.TileAt(-1, 0) == 0);
+            GRIMAR_ASSERT(!tileMap.SetTile(-1, 0, 1));
+
+            grimar::assets::TileDefinition grass{};
+            grass.spriteName = "grass";
+            grass.solid = true;
+
+            grimar::assets::TileDefinition coin{};
+            coin.spriteName = "coin";
+            coin.solid = false;
+
+            GRIMAR_ASSERT(!tileMap.SetDefinition(0, grass));
+            GRIMAR_ASSERT(tileMap.SetDefinition(1, grass));
+            GRIMAR_ASSERT(tileMap.SetDefinition(2, coin));
+            GRIMAR_ASSERT(tileMap.SetTile(0, 0, 1));
+            GRIMAR_ASSERT(tileMap.SetTile(2, 1, 2));
+            GRIMAR_ASSERT(!tileMap.SetTile(1, 1, 99));
+            GRIMAR_ASSERT(tileMap.TileAt(0, 0) == 1);
+            GRIMAR_ASSERT(tileMap.TileAt(2, 1) == 2);
+
+            GRIMAR_ASSERT(tileMap.Save(roundtripPath));
+            GRIMAR_ASSERT(tileMap.Save(nestedRoundtripPath));
+            GRIMAR_ASSERT(grimar::platform::FileExists(nestedRoundtripPath));
+
+            grimar::assets::TileMap loaded{};
+            GRIMAR_ASSERT(loaded.Load(roundtripPath));
+            GRIMAR_ASSERT(loaded.Width() == 3);
+            GRIMAR_ASSERT(loaded.Height() == 2);
+            GRIMAR_ASSERT(loaded.TileWidth() == 16);
+            GRIMAR_ASSERT(loaded.TileHeight() == 16);
+            GRIMAR_ASSERT(loaded.SpriteSheetPath() == "assets/editor.sprites.json");
+            GRIMAR_ASSERT(loaded.TileAt(0, 0) == 1);
+            GRIMAR_ASSERT(loaded.TileAt(2, 1) == 2);
+            GRIMAR_ASSERT(loaded.IsSolidAt(0, 0));
+            GRIMAR_ASSERT(!loaded.IsSolidAt(2, 1));
+
+            {
+                std::ofstream badFile(badPath);
+                badFile << R"({
+                    "width": 1,
+                    "height": 1,
+                    "tileWidth": 16,
+                    "tileHeight": 16,
+                    "spriteSheet": "assets/editor.sprites.json",
+                    "tiles": {
+                        "1": {"sprite": "grass", "solid": true}
+                    },
+                    "data": [2]
+                })";
+            }
+
+            grimar::assets::TileMap badMap{};
+            GRIMAR_ASSERT(!badMap.Load(badPath));
+
+            std::remove(roundtripPath.c_str());
+            std::remove(badPath.c_str());
+            std::filesystem::remove_all(nestedRoot);
+
+            GRIMAR_LOG_INFO("TileMap authoring/save/load tests OK");
+        }
+
+        // SpriteSheet grid metadata generation tests
+        {
+            const std::string path = TempPath("grimar_generated_spritesheet.json");
+            const auto nestedRoot = std::filesystem::absolute(
+                std::filesystem::path(TempPath("grimar_generated_spritesheet_nested"))
+            );
+            const std::string nestedPath =
+                (nestedRoot / "spritesheets" / "generated.sprites.json").string();
+            const grimar::assets::SpriteSheetGridDesc desc{
+                "assets/tiles.png",
+                128,
+                64,
+                32,
+                32,
+                "tile"
+            };
+
+            std::filesystem::remove_all(nestedRoot);
+
+            GRIMAR_ASSERT(grimar::assets::SaveSpriteSheetGridJson(desc, path));
+            GRIMAR_ASSERT(grimar::assets::SaveSpriteSheetGridJson(desc, nestedPath));
+            GRIMAR_ASSERT(grimar::platform::FileExists(nestedPath));
+            const std::string content = ReadTextFile(path);
+            GRIMAR_ASSERT(content.find("\"texture\": \"assets/tiles.png\"") != std::string::npos);
+            GRIMAR_ASSERT(content.find("\"tile_0\"") != std::string::npos);
+            GRIMAR_ASSERT(content.find("\"tile_7\"") != std::string::npos);
+            GRIMAR_ASSERT(content.find("\"tile_8\"") == std::string::npos);
+
+            std::remove(path.c_str());
+            std::filesystem::remove_all(nestedRoot);
+
+            GRIMAR_LOG_INFO("SpriteSheet grid metadata generation tests OK");
         }
 
         // TileMap solid collision with PhysicsSystem tests

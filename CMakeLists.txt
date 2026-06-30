@@ -22,6 +22,8 @@ add_library(grimar_engine STATIC
         src/engine/EngineApp.cpp
         include/grimar/platform/Window.hpp
         src/platform/Window.cpp
+        include/grimar/platform/FileSystem.hpp
+        src/platform/FileSystem.cpp
         include/grimar/platform/Input.hpp
         src/platform/Input.cpp
         include/grimar/render/Color.hpp
@@ -139,6 +141,18 @@ target_include_directories(grimar_sandbox PRIVATE
 )
 target_link_libraries(grimar_sandbox PRIVATE grimar_engine)
 
+add_executable(grimar_editor
+        src/editor/main.cpp
+        src/editor/EditorScene.hpp
+        src/editor/EditorScene.cpp
+)
+target_include_directories(grimar_editor PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/backends
+)
+target_link_libraries(grimar_editor PRIVATE grimar_engine dear_imgui)
+
 # ---- Copy runtime DLLs next to exe (Windows) ----
 # Windows'ta gerekli DLL'leri exe yan?na otomatik kopyala
 if (WIN32)
@@ -146,6 +160,13 @@ if (WIN32)
                 COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 $<TARGET_RUNTIME_DLLS:grimar_sandbox>
                 $<TARGET_FILE_DIR:grimar_sandbox>
+                COMMAND_EXPAND_LISTS
+        )
+
+        add_custom_command(TARGET grimar_editor POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                $<TARGET_RUNTIME_DLLS:grimar_editor>
+                $<TARGET_FILE_DIR:grimar_editor>
                 COMMAND_EXPAND_LISTS
         )
 endif()

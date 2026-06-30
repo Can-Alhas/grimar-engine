@@ -42,6 +42,9 @@ namespace grimar::engine {
         virtual void OnFixedUpdate(SceneContext& context, double fixedDt) noexcept = 0;
         virtual void OnUpdate(SceneContext& context, double dt) noexcept = 0;
         virtual void OnRender(SceneContext& context, double alpha) noexcept = 0;
+        virtual void OnImGui(SceneContext& context) noexcept {
+            (void)context;
+        }
 
         [[nodiscard]] virtual World& GetWorld() noexcept = 0;
         [[nodiscard]] virtual const World& GetWorld() const noexcept = 0;

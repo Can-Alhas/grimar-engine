@@ -18,7 +18,11 @@ namespace grimar::engine {
             switch (key) {
                 case SDLK_ESCAPE: return Key::Escape;
                 case SDLK_a:      return Key::A;
+                case SDLK_b:      return Key::B;
                 case SDLK_d:      return Key::D;
+                case SDLK_i:      return Key::I;
+                case SDLK_o:      return Key::O;
+                case SDLK_r:      return Key::R;
                 case SDLK_w:      return Key::W;
                 case SDLK_s:      return Key::S;
                 case SDLK_q:      return Key::Q;
@@ -26,11 +30,30 @@ namespace grimar::engine {
                 case SDLK_F1:     return Key::F1;
                 case SDLK_F2:     return Key::F2;
                 case SDLK_SPACE:  return Key::Space;
+                case SDLK_LCTRL:
+                case SDLK_RCTRL:  return Key::Ctrl;
+                case SDLK_LALT:
+                case SDLK_RALT:   return Key::Alt;
+                case SDLK_LSHIFT:
+                case SDLK_RSHIFT: return Key::Shift;
                 case SDLK_LEFT:   return Key::Left;
                 case SDLK_RIGHT:  return Key::Right;
                 case SDLK_UP:     return Key::Up;
                 case SDLK_DOWN:   return Key::Down;
                 default:          return Key::Count;
+            }
+        }
+
+        grimar::platform::MouseButton MapMouseButton(Uint8 button) {
+            using grimar::platform::MouseButton;
+
+            switch (button) {
+                case SDL_BUTTON_LEFT:   return MouseButton::Left;
+                case SDL_BUTTON_MIDDLE: return MouseButton::Middle;
+                case SDL_BUTTON_RIGHT:  return MouseButton::Right;
+                case SDL_BUTTON_X1:     return MouseButton::X1;
+                case SDL_BUTTON_X2:     return MouseButton::X2;
+                default:                return MouseButton::Count;
             }
         }
     }
@@ -195,6 +218,30 @@ namespace grimar::engine {
                     m_input.SetKeyDown(mapped, down);
                 }
             }
+
+            if (e.type == SDL_MOUSEMOTION) {
+                m_input.SetMousePosition(
+                    static_cast<float>(e.motion.x),
+                    static_cast<float>(e.motion.y)
+                );
+            }
+
+            if (e.type == SDL_MOUSEBUTTONDOWN || e.type == SDL_MOUSEBUTTONUP) {
+                const bool down = (e.type == SDL_MOUSEBUTTONDOWN);
+                const auto mapped = MapMouseButton(e.button.button);
+                m_input.SetMousePosition(
+                    static_cast<float>(e.button.x),
+                    static_cast<float>(e.button.y)
+                );
+                m_input.SetMouseButtonDown(mapped, down);
+            }
+
+            if (e.type == SDL_MOUSEWHEEL) {
+                m_input.AddMouseWheel(
+                    static_cast<float>(e.wheel.x),
+                    static_cast<float>(e.wheel.y)
+                );
+            }
         }
 
         if (m_input.WasKeyPressed(grimar::platform::Key::Escape)) {
@@ -278,9 +325,15 @@ namespace grimar::engine {
 
         m_renderer->Flush();
 
-        if (m_debugUiEnabled && m_activeScene && m_sceneLoaded && m_debugUi.IsInitialized()) {
+        if (m_activeScene && m_sceneLoaded && m_debugUi.IsInitialized()) {
             m_debugUi.BeginFrame();
-            m_debugUi.Render(*m_activeScene, m_debugDrawEnabled);
+
+            if (m_debugUiEnabled) {
+                m_debugUi.Render(*m_activeScene, m_debugDrawEnabled);
+            }
+
+            auto context = MakeSceneContext();
+            m_activeScene->OnImGui(context);
             m_debugUi.Draw(*m_renderer);
         }
 
