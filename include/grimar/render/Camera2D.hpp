@@ -21,34 +21,42 @@ namespace grimar::render {
         }
 
         void SetPosition(Vec2f p) noexcept { m_pos = p; }
-        Vec2f Position() const noexcept { return m_pos; }
+        [[nodiscard]] Vec2f Position() const noexcept { return m_pos; }
 
         // zoom 1.0 = normal, 2.0 = 2x zoomin, 0.5 = 2x zoomout
-        void SetZoom(float z) noexcept { m_zoom = (z > 0.f) ? z: 0.0001f; }
+        void SetZoom(const float z) noexcept { m_zoom = (z > 0.f) ? z: 0.0001f; }
         [[nodiscard]] float Zoom() const noexcept { return m_zoom; }
 
         // World -> Screen (pixel space)
         // camera position = screen center
-        Vec2f WorldToScreen(Vec2f world) const noexcept {
+        [[nodiscard]] Vec2f WorldToScreen(Vec2f world) const noexcept {
+
+            //for narrowing
+            const auto viewW_f = static_cast<float>(m_viewW);
+            const auto viewH_f = static_cast<float>(m_viewH);
+
             // World relative to camera
             const float rx = (world.x - m_pos.x) * m_zoom;
             const float ry = (world.y - m_pos.y) * m_zoom;
 
             // to screen center
             return Vec2f{
-                rx + (m_viewW * 0.5f),
-                (m_viewH * 0.5f) - ry // Y inverted
+                rx + (viewW_f * 0.5f),
+                (viewH_f * 0.5f) - ry // Y inverted
             };
         }
 
 
         // Screen -> World (opposite, to mouse picking )
-        Vec2f ScreenToWorld(Vec2f screen) const noexcept {
+        [[nodiscard]] Vec2f ScreenToWorld(Vec2f screen) const noexcept {
 
-            const float rx = (screen.x - (m_viewW * 0.5f)) / m_zoom;
+            // for narrowing
+            const auto viewW_f = static_cast<float>(m_viewW);
+            const auto viewH_f = static_cast<float>(m_viewH);
 
-            //narrowing!!!
-            const float ry = ((m_viewH * 0.5f) - screen.y) / m_zoom;
+
+            const float rx = (screen.x - (viewW_f * 0.5f)) / m_zoom;
+            const float ry = ((viewH_f * 0.5f) - screen.y) / m_zoom;
 
 
             return Vec2f {

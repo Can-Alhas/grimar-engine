@@ -10,6 +10,6 @@ namespace grimar::render {
     };
 
     struct RectI {
-        int x{0}, y{}, w{0}, h{0};
+        int x{0}, y{0}, w{0}, h{0};
     };
 }

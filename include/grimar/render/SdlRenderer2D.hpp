@@ -3,9 +3,7 @@
 
 #include <vector>
 #include <grimar/render/Renderer2D.hpp>
-
 #include "grimar/render/Camera2D.hpp"
-
 #include "grimar/assets/Texture2D.hpp"
 
 struct SDL_Renderer;
@@ -21,15 +19,17 @@ namespace grimar::render {
 
         void BeginFrame() noexcept override;
         void Clear(Color color) noexcept override;
-        void DrawRect(RectF rect, Color color, Layer layer = 0) noexcept override;
+
+        //
+        void DrawRect(RectF rect, Color color, Layer layer) noexcept override;
+
         void EndFrame() noexcept override;
-
         void SetCamera(const Camera2D* camera) noexcept override;
-
         void* NativeHandle() noexcept override;
 
+        //
         void DrawSprite(const grimar::assets::Texture2D& texture,
-                        RectI src, RectF dst, Layer layer = 0) noexcept override;
+                        RectI src, RectF dst, Layer layer) noexcept override;
 
     private:
         void Shutdown() noexcept;
@@ -45,11 +45,15 @@ namespace grimar::render {
             const grimar::assets::Texture2D* texture{nullptr};
             RectI src{};
         };
+
     private:
         SDL_Renderer* m_renderer{nullptr};
         const Camera2D* m_camera{nullptr};
         std::vector<DrawCmd> m_queue;
 
+        // Old method: We simply leave a default value for safety.
+        // It will be updated with the value of desc.maxDrawCommands in the Init function.
+        size_t m_currentCapacity{2048};
     };
 
-}
+} // namespace grimar::render

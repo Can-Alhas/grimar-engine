@@ -23,9 +23,9 @@ namespace grimar::platform {
         void BeginFrame() noexcept; // call once per frame
         void SetKeyDown(Key key, bool down) noexcept; // called from event pump
 
-        bool IsKeyDown(Key key) const noexcept;
-        bool WasKeyPressed(Key key) const noexcept;
-        bool WasKeyReleased(Key key) const noexcept;
+        [[nodiscard]] bool IsKeyDown(Key key) const noexcept;
+        [[nodiscard]] bool WasKeyPressed(Key key) const noexcept;
+        [[nodiscard]] bool WasKeyReleased(Key key) const noexcept;
 
     private:
         std::array<uint8_t, static_cast<size_t>(Key::Count)> m_curr{};

@@ -6,6 +6,7 @@
 
 
 namespace grimar::core {
+
     using clock = std::chrono::steady_clock;
 
     static clock::time_point s_lastFrame{};

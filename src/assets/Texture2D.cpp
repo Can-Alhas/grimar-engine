@@ -49,7 +49,7 @@ namespace grimar::assets {
 
         SDL_Surface* surf = IMG_Load(path.c_str());
         if (!surf) {
-            GRIMAR_LOG_ERROR(IMG_GetError());
+            GRIMAR_LOG_ERROR("{}", IMG_GetError());
             return false;
         }
 
@@ -60,7 +60,7 @@ namespace grimar::assets {
         SDL_FreeSurface(surf);
 
         if (!m_tex) {
-            GRIMAR_LOG_ERROR(SDL_GetError());
+            GRIMAR_LOG_ERROR("{}", SDL_GetError());
             m_w = 0;
             m_h = 0;
             return false;

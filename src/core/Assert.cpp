@@ -26,7 +26,7 @@ namespace grimar::core {
 
     [[noreturn]] void AssertFail(const char* expr,
                                 const char* file,
-                                int line,
+                                const int line,
                                 const char* msg) noexcept
     {
         // Route all assert output through the logging system

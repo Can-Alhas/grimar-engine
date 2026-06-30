@@ -2,6 +2,7 @@
 
 #pragma once
 
+
 #include <cstdint>
 
 struct SDL_Window;
@@ -30,8 +31,8 @@ namespace grimar::platform {
         [[nodiscard]] bool IsValid() const noexcept { return m_handle != nullptr; }
         [[nodiscard]] SDL_Window* NativeHandle() const noexcept { return m_handle; }
 
-        int Width()  const noexcept { return m_width; }
-        int Height() const noexcept { return m_height; }
+        [[nodiscard]] int Width()  const noexcept { return m_width; }
+        [[nodiscard]] int Height() const noexcept { return m_height; }
 
     private:
         SDL_Window* m_handle{nullptr};

@@ -438,14 +438,14 @@ namespace grimar::engine {
 
     bool EngineApp::InitSDL() noexcept {
         if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) != 0) {
-            GRIMAR_LOG_ERROR(SDL_GetError());
+            GRIMAR_LOG_ERROR("{}" ,SDL_GetError());
             return false;
         }
 
         // (SDL_image init)
         const int imgFlags = IMG_INIT_PNG;
         if ((IMG_Init(imgFlags) & imgFlags) != imgFlags) {
-            GRIMAR_LOG_ERROR(IMG_GetError());
+            GRIMAR_LOG_ERROR("{}", IMG_GetError());
             SDL_Quit();
             return false;
         }
@@ -457,7 +457,7 @@ namespace grimar::engine {
         wd.resizable = false;
 
         if (!m_window.Create(wd)) {
-            GRIMAR_LOG_ERROR(SDL_GetError());
+            GRIMAR_LOG_ERROR("{}", SDL_GetError());
             IMG_Quit();  // SDL_image close
             SDL_Quit();
             return false;

@@ -2,6 +2,7 @@
 #pragma once
 
 #include <string_view>
+#include <format> // Required for std::format_string and std::format
 
 namespace grimar::core {
     enum class LogLevel : unsigned char {
@@ -11,26 +12,26 @@ namespace grimar::core {
         Error
     };
 
-    // Set runtime minimum level (messages below are ignored at runtime).
-    // Note: compile-time filtering may still remove calls entirely.
     void SetLogLevel(LogLevel level) noexcept;
     LogLevel GetLogLevel() noexcept;
 
     // Core Logging Function (Dependency-free)
-    // msg is treated as already-formatted text.
     void Log(LogLevel level,
              const char* file,
              int line,
-             std::string_view msg ) noexcept;
+             std::string_view msg) noexcept;
 
+    // Helper function providing compile-time format string validation.
+    // Validates the '{}' placeholder layout at compile time via template arguments.
+    template<typename... Args>
+    [[nodiscard]] inline std::string FormatLog(std::format_string<Args...> fmt, Args&&... args) {
+        return std::format(fmt, std::forward<Args>(args)...);
+    }
 }
 
 // -------------------------
 // Compile-time log filtering
 // -------------------------
-// Debug:   enable Trace+
-// Release: enable Warn+ by default
-
 #if !defined(NDEBUG)
 #define GRIMAR_LOG_COMPILETIME_LEVEL ::grimar::core::LogLevel::Trace
 #else
@@ -42,39 +43,41 @@ namespace grimar::core {
 
 
 // Macro sugar (file/line captured)
-// These macros compile out if below GRIMAR_LOG_COMPILETIME_LEVEL.
-#define GRIMAR_LOG_TRACE(msg)                                                     \
+// Macros route through the FormatLog helper function.
+// This preserves compile-time safety and prevents static analysis (Clangd) errors.
+
+#define GRIMAR_LOG_TRACE(fmt, ...)                                                \
     do {                                                                          \
-        if constexpr (GRIMAR_LOG_LEVEL_GE(::grimar::core::LogLevel::Trace,        \
+        if constexpr (GRIMAR_LOG_LEVEL_GE(::grimar::core::LogLevel::Trace,         \
                                           GRIMAR_LOG_COMPILETIME_LEVEL)) {       \
             ::grimar::core::Log(::grimar::core::LogLevel::Trace, __FILE__,        \
-                                __LINE__, (msg));                                \
+                                __LINE__, ::grimar::core::FormatLog(fmt, ##__VA_ARGS__)); \
         }                                                                         \
     } while (0)
 
-#define GRIMAR_LOG_INFO(msg)                                                      \
+#define GRIMAR_LOG_INFO(fmt, ...)                                                 \
     do {                                                                          \
-        if constexpr (GRIMAR_LOG_LEVEL_GE(::grimar::core::LogLevel::Info,         \
+        if constexpr (GRIMAR_LOG_LEVEL_GE(::grimar::core::LogLevel::Info,          \
                                           GRIMAR_LOG_COMPILETIME_LEVEL)) {       \
             ::grimar::core::Log(::grimar::core::LogLevel::Info, __FILE__,         \
-                                __LINE__, (msg));                                \
+                                __LINE__, ::grimar::core::FormatLog(fmt, ##__VA_ARGS__)); \
         }                                                                         \
     } while (0)
 
-#define GRIMAR_LOG_WARN(msg)                                                      \
+#define GRIMAR_LOG_WARN(fmt, ...)                                                 \
     do {                                                                          \
-        if constexpr (GRIMAR_LOG_LEVEL_GE(::grimar::core::LogLevel::Warn,         \
+        if constexpr (GRIMAR_LOG_LEVEL_GE(::grimar::core::LogLevel::Warn,          \
                                           GRIMAR_LOG_COMPILETIME_LEVEL)) {       \
             ::grimar::core::Log(::grimar::core::LogLevel::Warn, __FILE__,         \
-                                __LINE__, (msg));                                \
+                                __LINE__, ::grimar::core::FormatLog(fmt, ##__VA_ARGS__)); \
         }                                                                         \
     } while (0)
 
-#define GRIMAR_LOG_ERROR(msg)                                                     \
+#define GRIMAR_LOG_ERROR(fmt, ...)                                                \
     do {                                                                          \
-        if constexpr (GRIMAR_LOG_LEVEL_GE(::grimar::core::LogLevel::Error,        \
+        if constexpr (GRIMAR_LOG_LEVEL_GE(::grimar::core::LogLevel::Error,         \
                                           GRIMAR_LOG_COMPILETIME_LEVEL)) {       \
             ::grimar::core::Log(::grimar::core::LogLevel::Error, __FILE__,        \
-                                __LINE__, (msg));                                \
+                                __LINE__, ::grimar::core::FormatLog(fmt, ##__VA_ARGS__)); \
         }                                                                         \
     } while (0)

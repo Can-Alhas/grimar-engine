@@ -9,7 +9,9 @@
 #include "grimar/render/Color.hpp"
 #include "grimar/render/Rect.hpp"
 
-namespace grimar::assets{ class Texture2D; }
+namespace grimar::assets {
+    class Texture2D;
+}
 
 namespace grimar::platform {
     class Window;
@@ -23,7 +25,8 @@ namespace grimar::render {
     using Layer = std::int32_t;
 
     struct Renderer2DDesc {
-        bool vsync = true;
+        bool vsync{true};
+        size_t maxDrawCommands{2048}; // default value maybe change
     };
 
     // Backend-independent 2D renderer interface.
@@ -39,23 +42,44 @@ namespace grimar::render {
         virtual bool Init(platform::Window& window, const Renderer2DDesc& desc) noexcept = 0;
         virtual void BeginFrame() noexcept = 0;
         virtual void Clear(Color color) noexcept = 0;
-        virtual void DrawRect(RectF rect, Color color, Layer layer = 0) noexcept = 0;
-        void DrawRect(float x, float y, float w, float h,
-                      Color color, Layer layer = 0 ) noexcept {
+
+        // -------------------------------------------------------------
+#pragma region RECTANGLE DRAWING INTERFACE
+        // Core pure virtual draw call. No default arguments here to satisfy Clang-Tidy.
+        virtual void DrawRect(RectF rect, Color color, Layer layer) noexcept = 0;
+
+        // Non-virtual helper overload allowing default layer arguments safely.
+        void DrawRect(RectF rect, Color color) noexcept {
+            DrawRect(rect, color, 0);
+        }
+        // Convenience overload for explicit float coordinates.
+        void DrawRect(float x, float y, float w, float h, Color color, Layer layer = 0) noexcept {
             DrawRect(RectF{x, y, w, h}, color, layer);
         }
-        virtual void EndFrame() noexcept = 0;
+#pragma endregion
 
+        virtual void EndFrame() noexcept = 0;
         virtual void SetCamera(const Camera2D* camera) noexcept = 0;
 
-        // Backend-specific native handle (e.g SDL_Renderer*, OpenGL constext ptr, etc.)
+
+        // Backend-specific native handle (e.g. SDL_Renderer*, OpenGL context ptr, etc.)
         virtual void* NativeHandle() noexcept = 0;
 
+#pragma region SPRITE DRAWING INTERFACE
+        // Core pure virtual sprite call. No default arguments to keep Clang-Tidy happy.
         virtual void DrawSprite(const grimar::assets::Texture2D& texture,
                                 RectI src,
                                 RectF dst,
-                                Layer layer = 0) noexcept = 0;
+                                Layer layer) noexcept = 0;
+        // Helper overload: Accepts 3 parameters and internally passes 0 as the default layer.
+        // With 3 parameters, it safely avoids any signature conflicts with the 4-parameter virtual function.
+        void DrawSprite(const grimar::assets::Texture2D& texture,
+                        RectI src,
+                        RectF dst) noexcept {
 
+            DrawSprite(texture, src, dst, 0);
+        }
+#pragma endregion
 
     protected:
         Renderer2D() = default;
