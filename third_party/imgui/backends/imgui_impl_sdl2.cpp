@@ -142,26 +142,26 @@
 // SDL Data
 struct ImGui_ImplSDL2_Data
 {
-    SDL_Window*             Window;
-    Uint32                  WindowID;       // Stored in ImGuiViewport::PlatformHandle. Use SDL_GetWindowFromID() to get SDL_Window* from Uint32 WindowID.
-    SDL_Renderer*           Renderer;
-    Uint64                  Time;
-    char*                   ClipboardTextData;
-    char                    BackendPlatformName[48];
+    SDL_Window*             Window{};
+    Uint32                  WindowID{};       // Stored in ImGuiViewport::PlatformHandle. Use SDL_GetWindowFromID() to get SDL_Window* from Uint32 WindowID.
+    SDL_Renderer*           Renderer{};
+    Uint64                  Time{};
+    char*                   ClipboardTextData{};
+    char                    BackendPlatformName[48]{};
 
     // Mouse handling
-    Uint32                  MouseWindowID;
-    int                     MouseButtonsDown;
-    SDL_Cursor*             MouseCursors[ImGuiMouseCursor_COUNT];
-    SDL_Cursor*             MouseLastCursor;
-    int                     MouseLastLeaveFrame;
-    bool                    MouseCanUseGlobalState;
+    Uint32                  MouseWindowID{};
+    int                     MouseButtonsDown{};
+    SDL_Cursor*             MouseCursors[ImGuiMouseCursor_COUNT]{};
+    SDL_Cursor*             MouseLastCursor{};
+    int                     MouseLastLeaveFrame{};
+    bool                    MouseCanUseGlobalState{};
     ImGui_ImplSDL2_MouseCaptureMode MouseCaptureMode;
 
     // Gamepad handling
     ImVector<SDL_GameController*> Gamepads;
     ImGui_ImplSDL2_GamepadMode    GamepadMode;
-    bool                          WantUpdateGamepadsList;
+    bool                          WantUpdateGamepadsList{};
 
     ImGui_ImplSDL2_Data()   { memset((void*)this, 0, sizeof(*this)); }
 };

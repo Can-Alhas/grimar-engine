@@ -52,6 +52,7 @@ cmake_install.cmake
 ############################
 *.log
 *.tmp
+*.ini
 EngineDev/
 \#*\#
 
