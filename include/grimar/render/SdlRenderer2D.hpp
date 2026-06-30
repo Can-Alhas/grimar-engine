@@ -19,6 +19,8 @@ namespace grimar::render {
 
         void BeginFrame() noexcept override;
         void Clear(Color color) noexcept override;
+        void Flush() noexcept override;
+        void Present() noexcept override;
 
         //
         void DrawRect(RectF rect, Color color, Layer layer) noexcept override;

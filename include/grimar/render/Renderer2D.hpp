@@ -44,6 +44,8 @@ namespace grimar::render {
         virtual bool Init(platform::Window& window, const Renderer2DDesc& desc) noexcept = 0;
         virtual void BeginFrame() noexcept = 0;
         virtual void Clear(Color color) noexcept = 0;
+        virtual void Flush() noexcept = 0;
+        virtual void Present() noexcept = 0;
 
         // -------------------------------------------------------------
 #pragma region RECTANGLE DRAWING INTERFACE

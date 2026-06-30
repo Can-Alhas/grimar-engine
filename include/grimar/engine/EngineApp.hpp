@@ -1,49 +1,19 @@
 ﻿// ~ Grimar Engine ~
 #pragma once
 
-#include <cstdint>
 #include <memory>
 
 
-#include "grimar/assets/Texture2D.hpp"
+#include "grimar/assets/AssetManager.hpp"
+#include "grimar/debug/ImGuiDebugLayer.hpp"
+#include "grimar/engine/EngineConfig.hpp"
+#include "grimar/engine/Scene.hpp"
 #include "grimar/platform/Input.hpp"
 #include "grimar/platform/Window.hpp"
 #include "grimar/render/Renderer2D.hpp"
 
-#include "grimar/render/Camera2D.hpp"
-
-#include "grimar/assets/AssetManager.hpp"
-
-#include "grimar/assets/SpriteSheet.hpp"
-
-#include "grimar/assets/Animation2D.hpp"
-#include "grimar/assets/TileMap.hpp"
-
-#include "grimar/engine/World.hpp"
-
-#include "grimar/engine/systems/RenderSystem.hpp"
-#include "grimar/engine/systems/AnimationSystem.hpp"
-#include "grimar/engine/systems/DebugDrawSystem.hpp"
-#include "grimar/engine/systems/PhysicsSystem.hpp"
-#include "grimar/engine/systems/TileMapSystem.hpp"
-
 
 namespace grimar::engine {
-
-    struct EngineConfig {
-        int windowWidth  = 1280;
-        int windowHeight = 720;
-        const char* windowTitle = "Grimar Engine";
-        bool vsync = true;
-
-        // Fixed Timestep (seconds)
-        double fixedDeltaTime = 1.0 / 60.0;
-
-        // Safety clamp (seconds)
-        double maxDeltaTime = 0.25;
-
-        int maxFixedStepsPerFrame = 5 ; // sprila-of-death guard
-    };
 
     class EngineApp {
     public:
@@ -56,10 +26,12 @@ namespace grimar::engine {
         bool Init()     noexcept;
         int  Run()      noexcept; // main loop
         void Shutdown() noexcept; // safe to call multiple times
+        void SetScene(std::unique_ptr<Scene> scene) noexcept;
 
     private:
         bool InitSDL()       noexcept;
         void ShutdownSDL()   noexcept;
+        [[nodiscard]] SceneContext MakeSceneContext() noexcept;
 
         void PollEvents()    noexcept;
         void Tick()          noexcept; // one frame: time/input/update/render
@@ -79,36 +51,13 @@ namespace grimar::engine {
         // SDL_Window*    m_window{nullptr}; // Deprec
         grimar::platform::Window m_window;
         grimar::platform::Input  m_input;
-        //SDL_Renderer*  m_renderer{nullptr};
         std::unique_ptr<render::Renderer2D> m_renderer;
 
-        grimar::render::Camera2D m_camera;
-
-        //for test
-        grimar::assets::Texture2D m_testTexture;
-
-        // for test
         grimar::assets::AssetManager m_assets;
-
-        // for test
-        std::shared_ptr<grimar::assets::Texture2D> m_textTex;
-
-        // json falan
-        grimar::assets::SpriteSheet m_testSheet;
-        grimar::assets::TileMap m_testTileMap;
-        grimar::core::Vec2f m_tileMapOrigin{-384.f, -160.f};
-
-        //Animation
-        grimar::assets::AnimationClip  m_idleClip;
-
-        //Game world / scene state
-        grimar::engine::World m_world{};
-
-        //
-        grimar::engine::AnimationSystem m_animationSystem;
-        grimar::engine::RenderSystem m_renderSystem;
-        grimar::engine::PhysicsSystem m_physicsSystem;
-        grimar::engine::DebugDrawSystem m_debugDrawSystem;
-        grimar::engine::TileMapSystem m_tileMapSystem;
+        std::unique_ptr<Scene> m_activeScene{};
+        bool m_sceneLoaded{false};
+        bool m_debugUiEnabled{true};
+        bool m_debugDrawEnabled{true};
+        grimar::debug::ImGuiDebugLayer m_debugUi{};
     };
 }

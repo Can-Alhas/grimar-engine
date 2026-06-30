@@ -12,8 +12,12 @@ add_library(grimar_engine STATIC
         src/core/Assert.cpp
         include/grimar/core/Log.hpp
         src/core/Log.cpp
+        include/grimar/debug/ImGuiDebugLayer.hpp
+        src/debug/ImGuiDebugLayer.cpp
         include/grimar/core/Time.hpp
         src/core/Time.cpp
+        include/grimar/engine/EngineConfig.hpp
+        include/grimar/engine/Scene.hpp
         include/grimar/engine/EngineApp.hpp
         src/engine/EngineApp.cpp
         include/grimar/platform/Window.hpp
@@ -36,6 +40,7 @@ add_library(grimar_engine STATIC
 		include/grimar/assets/TileMap.hpp
 		src/assets/TileMap.cpp
 		include/grimar/engine/Entity.hpp
+		include/grimar/engine/ComponentStorage.hpp
 
 		include/grimar/engine/World.hpp
 		src/engine/World.cpp
@@ -43,8 +48,11 @@ add_library(grimar_engine STATIC
 		include/grimar/core/Math2D.hpp
 		include/grimar/engine/components/SpriteRenderer.hpp
 		include/grimar/engine/components/Animator2D.hpp
+		include/grimar/engine/components/CharacterController2D.hpp
 		include/grimar/engine/systems/AnimationSystem.hpp
 		src/engine/systems/AnimationSystem.cpp
+		include/grimar/engine/systems/CharacterControllerSystem.hpp
+		src/engine/systems/CharacterControllerSystem.cpp
 		include/grimar/engine/systems/RenderSystem.hpp
 		src/engine/systems/RenderSystem.cpp
 		include/grimar/engine/systems/PhysicsSystem.hpp
@@ -88,6 +96,24 @@ find_package(SDL2_ttf CONFIG REQUIRED)
 find_package(SDL2_mixer CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 
+add_library(dear_imgui STATIC
+        third_party/imgui/imgui.cpp
+        third_party/imgui/imgui_draw.cpp
+        third_party/imgui/imgui_tables.cpp
+        third_party/imgui/imgui_widgets.cpp
+        third_party/imgui/backends/imgui_impl_sdl2.cpp
+        third_party/imgui/backends/imgui_impl_sdlrenderer2.cpp
+)
+
+target_include_directories(dear_imgui PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/backends
+)
+
+target_link_libraries(dear_imgui PUBLIC
+        $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
+)
+
 target_link_libraries(grimar_engine PUBLIC
         $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
         SDL2::SDL2main
@@ -99,11 +125,17 @@ target_link_libraries(grimar_engine PUBLIC
 
 target_link_libraries(grimar_engine PRIVATE
         nlohmann_json::nlohmann_json
+        dear_imgui
 )
 
 # ---- Sandbox executable (boot) -----
 add_executable(grimar_sandbox
         src/main.cpp
+        src/sandbox/SandboxScene.hpp
+        src/sandbox/SandboxScene.cpp
+)
+target_include_directories(grimar_sandbox PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 target_link_libraries(grimar_sandbox PRIVATE grimar_engine)
 

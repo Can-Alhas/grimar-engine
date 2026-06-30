@@ -12,6 +12,7 @@ namespace grimar::platform {
         Escape,
         A, D, W, S,
         Q, E,
+        F1, F2,
         Space,
         Left, Right, Up, Down,
         Count

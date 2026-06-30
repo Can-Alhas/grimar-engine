@@ -3,19 +3,30 @@
 #pragma once
 
 #include <cstdint>
-#include <unordered_map>
 #include <vector>
 
 
+#include "grimar/engine/ComponentStorage.hpp"
 #include "grimar/engine/Entity.hpp"
 #include "grimar/engine/components/Animator2D.hpp"
 #include "grimar/engine/components/BoxCollider2D.hpp"
+#include "grimar/engine/components/CharacterController2D.hpp"
 #include "grimar/engine/components/RigidBody2D.hpp"
 #include "grimar/engine/components/SpriteRenderer.hpp"
 #include "grimar/engine/components/Transform2D.hpp"
 
 
 namespace grimar::engine {
+
+    struct WorldDebugStats {
+        std::uint32_t aliveEntities{0};
+        std::uint32_t transforms{0};
+        std::uint32_t spriteRenderers{0};
+        std::uint32_t animators{0};
+        std::uint32_t rigidBodies{0};
+        std::uint32_t boxColliders{0};
+        std::uint32_t characterControllers{0};
+    };
 
     class World {
     public:
@@ -32,6 +43,21 @@ namespace grimar::engine {
 
         [[nodiscard]] std::uint32_t AliveCount() const noexcept {
             return m_aliveCount;
+        }
+
+        [[nodiscard]] WorldDebugStats DebugStats() const noexcept;
+
+        void Clear() noexcept;
+
+        template <typename Fn>
+        void ForEachEntity(Fn&& fn) const {
+            for (Entity::Id id = 0; id < m_generations.size(); ++id) {
+                if (id >= m_alive.size() || !m_alive[id]) {
+                    continue;
+                }
+
+                fn(Entity{id, m_generations[id]});
+            }
         }
 
 #pragma region Transform Functions
@@ -61,17 +87,13 @@ namespace grimar::engine {
         // Transform referans oldugu icin callback icinde component degistirilebilir.
         template <typename Fn>
         void ForEachTransform(Fn&& fn) {
-            for (auto& [id, transform] : m_transforms) {
-                Entity entity{id, m_generations[id]};
-
-
-                // Destroy edilmis/stale entity'leri callback'e gondermiyoruz.
+            m_transforms.ForEach([&](Entity entity, Transform2D& transform) {
                 if (!IsAlive(entity)) {
-                    continue;
+                    return;
                 }
 
                 fn(entity, transform);
-            }
+            });
         }
 #pragma endregion
 
@@ -102,16 +124,13 @@ namespace grimar::engine {
         // Callback entity ve SpriteRenderer referansi alir.
         template <typename Fn>
         void ForEachSpriteRenderer(Fn&& fn) {
-            for (auto& [id, spriteRenderer] : m_spriteRenderers) {
-                Entity entity{id, m_generations[id]};
-
-                // Destroy edilmis/stale entity'leri callback'e gondermiyoruz.
+            m_spriteRenderers.ForEach([&](Entity entity, SpriteRenderer& spriteRenderer) {
                 if (!IsAlive(entity)) {
-                    continue;
+                    return;
                 }
 
                 fn(entity, spriteRenderer);
-            }
+            });
         }
 
 #pragma endregion
@@ -126,15 +145,34 @@ namespace grimar::engine {
 
         template <typename Fn>
         void ForEachAnimator2D(Fn&& fn) {
-            for (auto& [id, animator] : m_animators) {
-                Entity entity{id, m_generations[id]};
-
+            m_animators.ForEach([&](Entity entity, Animator2D& animator) {
                 if (!IsAlive(entity)) {
-                    continue;
+                    return;
                 }
 
                 fn(entity, animator);
-            }
+            });
+        }
+
+#pragma endregion
+
+#pragma region Character Controller Component Functions
+
+        bool AddCharacterController2D(Entity entity, CharacterController2D controller) noexcept;
+        [[nodiscard]] bool HasCharacterController2D(Entity entity) const noexcept;
+        [[nodiscard]] CharacterController2D* GetCharacterController2D(Entity entity) noexcept;
+        [[nodiscard]] const CharacterController2D* GetCharacterController2D(Entity entity) const noexcept;
+        bool RemoveCharacterController2D(Entity entity) noexcept;
+
+        template <typename Fn>
+        void ForEachCharacterController2D(Fn&& fn) {
+            m_characterControllers.ForEach([&](Entity entity, CharacterController2D& controller) {
+                if (!IsAlive(entity)) {
+                    return;
+                }
+
+                fn(entity, controller);
+            });
         }
 
 #pragma endregion
@@ -150,16 +188,13 @@ namespace grimar::engine {
 
         template<typename Fn>
         void ForEachRigidBody(Fn&& fn) {
-            for (auto& [id, rigidBody] : m_rigidBodies) {
-                Entity entity{id, m_generations[id]};
-
+            m_rigidBodies.ForEach([&](Entity entity, RigidBody2D& rigidBody) {
                 if (!IsAlive(entity)) {
-                    continue;
+                    return;
                 }
 
-
                 fn(entity, rigidBody);
-            }
+            });
         }
 
 
@@ -171,15 +206,13 @@ namespace grimar::engine {
 
         template <typename Fn>
         void ForEachBoxCollider(Fn&& fn) {
-            for (auto& [id, collider] : m_boxColliders ) {
-                Entity entity{id, m_generations[id]};
-
+            m_boxColliders.ForEach([&](Entity entity, BoxCollider2D& collider) {
                 if (!IsAlive(entity)) {
-                    continue;
+                    return;
                 }
 
                 fn(entity, collider);
-            }
+            });
         }
 #pragma endregion
     private:
@@ -190,28 +223,22 @@ namespace grimar::engine {
         // Destroy edilmis entity id'lerini tekrar kullanmak icin free-list.
         // Bu performans icin yeni id uretmek yerine eski slotlari kullanmamizi saglar.
         std::vector<Entity::Id> m_freeIds{};
+        std::vector<std::uint8_t> m_alive{};
 
         // Su an yasayan entity sayisi.
         std::uint32_t m_aliveCount{0};
 
-        //MVP component storage:
-        // Entity id -> Transform2D
-        // Generic ECS degil; once tek component mantigi
+        // Component storage'lar generic sparse-set uzerinden tutulur.
+        // Public World API sabit kalir; sistemler storage detayini bilmez.
+        ComponentStorage<Transform2D> m_transforms{};
+        ComponentStorage<SpriteRenderer> m_spriteRenderers{};
 
-        std::unordered_map<Entity::Id, Transform2D> m_transforms{};
-
-        // MVP SpriteRenderer component storage:
-        // Entity id -> SpriteRenderer.
-        //
-        // Bu da Transform2D gibi unordered_map ile basliyor.
-        // Ileride dense/sparse storage'a gecilebilir.
-        std::unordered_map<Entity::Id, SpriteRenderer> m_spriteRenderers{};
-
-        std::unordered_map<Entity::Id, Animator2D> m_animators{};
+        ComponentStorage<Animator2D> m_animators{};
+        ComponentStorage<CharacterController2D> m_characterControllers{};
 
 
-        std::unordered_map<Entity::Id, RigidBody2D>   m_rigidBodies{};
-        std::unordered_map<Entity::Id, BoxCollider2D> m_boxColliders{};
+        ComponentStorage<RigidBody2D>   m_rigidBodies{};
+        ComponentStorage<BoxCollider2D> m_boxColliders{};
 
 
     };

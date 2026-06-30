@@ -5,24 +5,180 @@
 
 #include "grimar/core/Assert.hpp"
 #include "grimar/core/Log.hpp"
+#include "grimar/assets/AssetManager.hpp"
 #include "grimar/assets/Animation2D.hpp"
 #include "grimar/assets/TileMap.hpp"
+#include "grimar/engine/ComponentStorage.hpp"
+#include "grimar/engine/EngineConfig.hpp"
 #include "grimar/engine/Entity.hpp"
+#include "grimar/engine/Scene.hpp"
 #include "grimar/engine/World.hpp"
 #include "grimar/engine/components/Animator2D.hpp"
 #include "grimar/engine/components/BoxCollider2D.hpp"
+#include "grimar/engine/components/CharacterController2D.hpp"
 #include "grimar/engine/components/RigidBody2D.hpp"
 #include "grimar/engine/components/SpriteRenderer.hpp"
 #include "grimar/engine/components/Transform2D.hpp"
 #include "grimar/engine/systems/AnimationSystem.hpp"
+#include "grimar/engine/systems/CharacterControllerSystem.hpp"
 #include "grimar/engine/systems/PhysicsSystem.hpp"
 #include "grimar/engine/systems/TileMapSystem.hpp"
+#include "grimar/platform/Input.hpp"
+#include "grimar/render/Renderer2D.hpp"
 
+namespace {
+
+    class NullRenderer2D final : public grimar::render::Renderer2D {
+    public:
+        bool Init(grimar::platform::Window&,
+                  const grimar::render::Renderer2DDesc&) noexcept override {
+            return true;
+        }
+
+        void BeginFrame() noexcept override {}
+        void Clear(grimar::render::Color) noexcept override {}
+        void Flush() noexcept override {}
+        void Present() noexcept override {}
+        void DrawRect(grimar::render::RectF,
+                      grimar::render::Color,
+                      grimar::render::Layer) noexcept override {}
+        void DrawLine(grimar::core::Vec2f,
+                      grimar::core::Vec2f,
+                      grimar::render::Color,
+                      grimar::render::Layer) noexcept override {}
+        void EndFrame() noexcept override {}
+        void SetCamera(const grimar::render::Camera2D* camera) noexcept override {
+            activeCamera = camera;
+        }
+        void* NativeHandle() noexcept override { return nullptr; }
+        void DrawSprite(const grimar::assets::Texture2D&,
+                        grimar::render::RectI,
+                        grimar::render::RectF,
+                        grimar::render::Layer) noexcept override {}
+
+        const grimar::render::Camera2D* activeCamera{nullptr};
+    };
+
+    class LifecycleScene final : public grimar::engine::Scene {
+    public:
+        bool OnLoad(grimar::engine::SceneContext& context) noexcept override {
+            ++loadCount;
+            camera.SetViewport(context.config.windowWidth, context.config.windowHeight);
+            context.renderer.SetCamera(&camera);
+            const auto entity = world.CreateEntity();
+            GRIMAR_ASSERT(entity.IsValid());
+            return true;
+        }
+
+        void OnUnload(grimar::engine::SceneContext&) noexcept override {
+            ++unloadCount;
+            world.Clear();
+        }
+
+        void OnFixedUpdate(grimar::engine::SceneContext&, double fixedDt) noexcept override {
+            ++fixedUpdateCount;
+            lastFixedDt = fixedDt;
+        }
+
+        void OnUpdate(grimar::engine::SceneContext&, double dt) noexcept override {
+            ++updateCount;
+            lastDt = dt;
+        }
+
+        void OnRender(grimar::engine::SceneContext&, double alpha) noexcept override {
+            ++renderCount;
+            lastAlpha = alpha;
+        }
+
+        [[nodiscard]] grimar::engine::World& GetWorld() noexcept override {
+            return world;
+        }
+
+        [[nodiscard]] const grimar::engine::World& GetWorld() const noexcept override {
+            return world;
+        }
+
+        [[nodiscard]] grimar::render::Camera2D& GetCamera() noexcept override {
+            return camera;
+        }
+
+        [[nodiscard]] const grimar::render::Camera2D& GetCamera() const noexcept override {
+            return camera;
+        }
+
+        int loadCount{0};
+        int unloadCount{0};
+        int fixedUpdateCount{0};
+        int updateCount{0};
+        int renderCount{0};
+        double lastFixedDt{0.0};
+        double lastDt{0.0};
+        double lastAlpha{0.0};
+
+    private:
+        grimar::engine::World world{};
+        grimar::render::Camera2D camera{};
+    };
+}
 
 
 
 namespace grimar::engine {
     void RunEngineSmokeTests() noexcept {
+        // Generic ComponentStorage sparse-set tests
+        {
+            grimar::engine::ComponentStorage<grimar::engine::Transform2D> storage{};
+
+            const grimar::engine::Entity a{0, 1};
+            const grimar::engine::Entity b{5, 1};
+            const grimar::engine::Entity c{2, 1};
+
+            grimar::engine::Transform2D ta{};
+            ta.SetPosition(10.f, 20.f);
+
+            grimar::engine::Transform2D tb{};
+            tb.SetPosition(30.f, 40.f);
+
+            grimar::engine::Transform2D tc{};
+            tc.SetPosition(50.f, 60.f);
+
+            GRIMAR_ASSERT(storage.Add(a, ta));
+            GRIMAR_ASSERT(storage.Add(b, tb));
+            GRIMAR_ASSERT(storage.Add(c, tc));
+            GRIMAR_ASSERT(storage.Count() == 3);
+            GRIMAR_ASSERT(storage.Contains(a));
+            GRIMAR_ASSERT(storage.Contains(b));
+            GRIMAR_ASSERT(storage.Contains(c));
+
+            auto* storedB = storage.Get(b);
+            GRIMAR_ASSERT(storedB != nullptr);
+            GRIMAR_ASSERT(storedB->position.x == 30.f);
+
+            grimar::engine::Transform2D replacement{};
+            replacement.SetPosition(70.f, 80.f);
+            GRIMAR_ASSERT(storage.Add(b, replacement));
+            GRIMAR_ASSERT(storage.Count() == 3);
+            GRIMAR_ASSERT(storage.Get(b)->position.x == 70.f);
+
+            GRIMAR_ASSERT(storage.Remove(b));
+            GRIMAR_ASSERT(storage.Count() == 2);
+            GRIMAR_ASSERT(!storage.Contains(b));
+            GRIMAR_ASSERT(storage.Contains(a));
+            GRIMAR_ASSERT(storage.Contains(c));
+
+            int visited = 0;
+            storage.ForEach([&](grimar::engine::Entity,
+                                grimar::engine::Transform2D&) {
+                ++visited;
+            });
+            GRIMAR_ASSERT(visited == 2);
+
+            storage.Clear();
+            GRIMAR_ASSERT(storage.Count() == 0);
+
+            GRIMAR_LOG_INFO("ComponentStorage sparse-set tests OK");
+        }
+
           //Entity create test
         {
 
@@ -169,6 +325,87 @@ namespace grimar::engine {
             GRIMAR_ASSERT(!world.IsAlive(oldEntity));
 
             GRIMAR_LOG_INFO("World stale generation reuse test OK");
+        }
+
+        // World entity iteration and debug stats tests
+        {
+            grimar::engine::World world{};
+
+            const auto a = world.CreateEntity();
+            const auto b = world.CreateEntity();
+            const auto c = world.CreateEntity();
+
+            world.DestroyEntity(b);
+
+            int visited = 0;
+            world.ForEachEntity([&](grimar::engine::Entity entity) {
+                GRIMAR_ASSERT(entity == a || entity == c);
+                ++visited;
+            });
+
+            GRIMAR_ASSERT(visited == 2);
+
+            grimar::engine::Transform2D transform{};
+            grimar::engine::SpriteRenderer sprite{};
+            GRIMAR_ASSERT(world.AddTransform(a, transform));
+            GRIMAR_ASSERT(world.AddSpriteRenderer(c, sprite));
+
+            const auto stats = world.DebugStats();
+            GRIMAR_ASSERT(stats.aliveEntities == 2);
+            GRIMAR_ASSERT(stats.transforms == 1);
+            GRIMAR_ASSERT(stats.spriteRenderers == 1);
+            GRIMAR_ASSERT(stats.animators == 0);
+            GRIMAR_ASSERT(stats.rigidBodies == 0);
+            GRIMAR_ASSERT(stats.boxColliders == 0);
+            GRIMAR_ASSERT(stats.characterControllers == 0);
+
+            world.Clear();
+            GRIMAR_ASSERT(world.AliveCount() == 0);
+            GRIMAR_ASSERT(world.DebugStats().aliveEntities == 0);
+
+            GRIMAR_LOG_INFO("World entity iteration/debug stats tests OK");
+        }
+
+        // Scene lifecycle interface tests
+        {
+            NullRenderer2D renderer{};
+            grimar::platform::Input input{};
+            grimar::assets::AssetManager assets{};
+            grimar::engine::EngineConfig config{};
+            config.windowWidth = 320;
+            config.windowHeight = 180;
+
+            grimar::engine::SceneContext context{
+                renderer,
+                input,
+                assets,
+                config,
+                true
+            };
+
+            LifecycleScene scene{};
+
+            GRIMAR_ASSERT(scene.OnLoad(context));
+            GRIMAR_ASSERT(scene.loadCount == 1);
+            GRIMAR_ASSERT(scene.GetWorld().AliveCount() == 1);
+            GRIMAR_ASSERT(renderer.activeCamera == &scene.GetCamera());
+
+            scene.OnFixedUpdate(context, 1.0 / 60.0);
+            scene.OnUpdate(context, 0.25);
+            scene.OnRender(context, 0.5);
+
+            GRIMAR_ASSERT(scene.fixedUpdateCount == 1);
+            GRIMAR_ASSERT(scene.updateCount == 1);
+            GRIMAR_ASSERT(scene.renderCount == 1);
+            GRIMAR_ASSERT(scene.lastFixedDt == 1.0 / 60.0);
+            GRIMAR_ASSERT(scene.lastDt == 0.25);
+            GRIMAR_ASSERT(scene.lastAlpha == 0.5);
+
+            scene.OnUnload(context);
+            GRIMAR_ASSERT(scene.unloadCount == 1);
+            GRIMAR_ASSERT(scene.GetWorld().AliveCount() == 0);
+
+            GRIMAR_LOG_INFO("Scene lifecycle interface tests OK");
         }
 
         //SpriteRenderer component test
@@ -405,6 +642,60 @@ namespace grimar::engine {
             GRIMAR_ASSERT(aabb.max.y == 55.f);
 
             GRIMAR_LOG_INFO("Physics component data tests OK");
+        }
+
+        // CharacterController2D movement tests
+        {
+            grimar::engine::World world{};
+            grimar::engine::CharacterControllerSystem controllerSystem{};
+
+            const auto entity = world.CreateEntity();
+
+            grimar::engine::RigidBody2D body{};
+            body.bodyType = grimar::engine::BodyType::Dynamic;
+            body.grounded = true;
+
+            grimar::engine::CharacterController2D controller{};
+            controller.moveSpeed = 200.f;
+            controller.jumpVelocity = 500.f;
+            controller.maxFallSpeed = 700.f;
+            controller.coyoteTime = 0.1f;
+            controller.jumpBufferTime = 0.1f;
+
+            GRIMAR_ASSERT(world.AddRigidBody(entity, body));
+            GRIMAR_ASSERT(world.AddCharacterController2D(entity, controller));
+            GRIMAR_ASSERT(world.HasCharacterController2D(entity));
+
+            controllerSystem.FixedUpdate(
+                world,
+                grimar::engine::CharacterInput2D{1.f, true, true},
+                1.0 / 60.0
+            );
+
+            auto* storedBody = world.GetRigidBody(entity);
+            auto* storedController = world.GetCharacterController2D(entity);
+
+            GRIMAR_ASSERT(storedBody != nullptr);
+            GRIMAR_ASSERT(storedController != nullptr);
+            GRIMAR_ASSERT(storedBody->velocity.x == 200.f);
+            GRIMAR_ASSERT(storedBody->velocity.y == 500.f);
+            GRIMAR_ASSERT(!storedBody->grounded);
+            GRIMAR_ASSERT(storedController->jumpBufferTimer == 0.f);
+
+            storedBody->velocity.y = -1000.f;
+            controllerSystem.FixedUpdate(
+                world,
+                grimar::engine::CharacterInput2D{-1.f, false, false},
+                1.0 / 60.0
+            );
+
+            GRIMAR_ASSERT(storedBody->velocity.x == -200.f);
+            GRIMAR_ASSERT(storedBody->velocity.y == -700.f);
+
+            GRIMAR_ASSERT(world.RemoveCharacterController2D(entity));
+            GRIMAR_ASSERT(!world.HasCharacterController2D(entity));
+
+            GRIMAR_LOG_INFO("CharacterController2D movement tests OK");
         }
 
         // World physics component storage tests

@@ -1,6 +1,9 @@
 ﻿
 #include "grimar/engine/EngineApp.hpp"
 #include "grimar/core/Log.hpp"
+#include "sandbox/SandboxScene.hpp"
+
+#include <memory>
 
 
 int main()
@@ -51,6 +54,8 @@ int main()
     cfg.maxFixedStepsPerFrame = 5;
 
     grimar::engine::EngineApp engine(cfg);
+    engine.SetScene(std::make_unique<grimar::sandbox::SandboxScene>());
+
     if (!engine.Init())
         return 1;
 

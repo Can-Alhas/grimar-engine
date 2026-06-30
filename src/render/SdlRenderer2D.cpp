@@ -115,7 +115,7 @@ namespace grimar::render {
     }
 
 
-    void SdlRenderer2D::EndFrame() noexcept {
+    void SdlRenderer2D::Flush() noexcept {
         if (!m_renderer) return;
 
         if (m_queue.size() > m_currentCapacity) {
@@ -202,8 +202,20 @@ namespace grimar::render {
             }
         }
 
-        SDL_RenderPresent(m_renderer);
         m_queue.clear();
+    }
+
+    void SdlRenderer2D::Present() noexcept {
+        if (!m_renderer) {
+            return;
+        }
+
+        SDL_RenderPresent(m_renderer);
+    }
+
+    void SdlRenderer2D::EndFrame() noexcept {
+        Flush();
+        Present();
     }
 
 

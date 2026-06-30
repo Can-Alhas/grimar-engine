@@ -18,8 +18,10 @@ namespace grimar::engine {
             // Yeni entity generation 1 ile baslar.
             // Generation 0 invalid kabul ediliyor.
             m_generations.push_back(1);
+            m_alive.push_back(0);
         }
 
+        m_alive[id] = 1;
         ++m_aliveCount;
 
         return Entity{id, m_generations[id]};
@@ -32,15 +34,18 @@ namespace grimar::engine {
 
         // Bu entity'ye bagli component'leri de siliyoruz.
         // Boylece destroy edilmis entity render/physics sistemlerinde kalmaz.
-        m_transforms.erase(entity.id);
+        m_transforms.Remove(entity);
         //
-        m_spriteRenderers.erase(entity.id);
-        m_animators.erase(entity.id);
+        m_spriteRenderers.Remove(entity);
+        m_animators.Remove(entity);
 
         //
-        m_rigidBodies.erase(entity.id);
-        m_boxColliders.erase(entity.id);
+        m_rigidBodies.Remove(entity);
+        m_boxColliders.Remove(entity);
+        m_characterControllers.Remove(entity);
         //
+
+        m_alive[entity.id] = 0;
 
         // Generation artiriyoruz.
         // Bu sayede eski handle stale hale gelir.
@@ -69,7 +74,37 @@ namespace grimar::engine {
             return false;
         }
 
+        if (entity.id >= m_alive.size() || !m_alive[entity.id]) {
+            return false;
+        }
+
         return m_generations[entity.id] == entity.generation;
+    }
+
+    WorldDebugStats World::DebugStats() const noexcept {
+        return WorldDebugStats{
+            m_aliveCount,
+            m_transforms.Count(),
+            m_spriteRenderers.Count(),
+            m_animators.Count(),
+            m_rigidBodies.Count(),
+            m_boxColliders.Count(),
+            m_characterControllers.Count()
+        };
+    }
+
+    void World::Clear() noexcept {
+        m_generations.clear();
+        m_freeIds.clear();
+        m_alive.clear();
+        m_aliveCount = 0;
+
+        m_transforms.Clear();
+        m_spriteRenderers.Clear();
+        m_animators.Clear();
+        m_characterControllers.Clear();
+        m_rigidBodies.Clear();
+        m_boxColliders.Clear();
     }
 
 #pragma region Transform functions impl
@@ -82,7 +117,7 @@ namespace grimar::engine {
         // - component yoksa ekler
         // - varsa mevcut component'i yeni degerle degistirir
 
-        m_transforms.insert_or_assign(entity.id, transform);
+        m_transforms.Add(entity, transform);
         return true;
     }
 
@@ -91,7 +126,7 @@ namespace grimar::engine {
             return false;
         }
 
-        return m_transforms.find(entity.id) != m_transforms.end();
+        return m_transforms.Contains(entity);
     }
 
     Transform2D *World::GetTransform(Entity entity) noexcept {
@@ -99,12 +134,7 @@ namespace grimar::engine {
             return nullptr;
         }
 
-        auto it = m_transforms.find(entity.id);
-        if (it == m_transforms.end()) {
-            return nullptr;
-        }
-
-        return &it->second;
+        return m_transforms.Get(entity);
     }
 
     const Transform2D* World::GetTransform(Entity entity) const noexcept {
@@ -112,12 +142,7 @@ namespace grimar::engine {
             return nullptr;
         }
 
-        auto it = m_transforms.find(entity.id);
-        if (it == m_transforms.end()) {
-            return nullptr;
-        }
-
-        return &it->second;
+        return m_transforms.Get(entity);
     }
 
 
@@ -127,7 +152,7 @@ namespace grimar::engine {
             return false;
         }
 
-        return m_transforms.erase(entity.id) > 0;
+        return m_transforms.Remove(entity);
     }
 
 #pragma endregion
@@ -141,7 +166,7 @@ namespace grimar::engine {
         // insert_or_assign:
         //component yoksa ekler
         // varsa mevcut componenti  yeni degerle degisir
-        m_spriteRenderers.insert_or_assign(entity.id, spriteRenderer);
+        m_spriteRenderers.Add(entity, spriteRenderer);
         return true;
     }
 
@@ -150,7 +175,7 @@ namespace grimar::engine {
             return false;
         }
 
-        return m_spriteRenderers.find(entity.id) != m_spriteRenderers.end();
+        return m_spriteRenderers.Contains(entity);
     }
 
     SpriteRenderer* World::GetSpriteRenderer(Entity entity) noexcept {
@@ -158,12 +183,7 @@ namespace grimar::engine {
             return nullptr;
         }
 
-        auto it = m_spriteRenderers.find(entity.id);
-        if ( it == m_spriteRenderers.end()) {
-            return nullptr;
-        }
-
-        return &it->second;
+        return m_spriteRenderers.Get(entity);
     }
 
     const SpriteRenderer *World::GetSpriteRenderer(Entity entity) const noexcept {
@@ -171,12 +191,7 @@ namespace grimar::engine {
             return nullptr;
         }
 
-        auto it = m_spriteRenderers.find(entity.id);
-        if ( it == m_spriteRenderers.end()) {
-            return nullptr;
-        }
-
-        return &it->second;
+        return m_spriteRenderers.Get(entity);
     }
 
     bool World::RemoveSpriteRenderer(Entity entity) noexcept {
@@ -184,7 +199,7 @@ namespace grimar::engine {
             return false;
         }
 
-        return m_spriteRenderers.erase(entity.id) > 0;
+        return m_spriteRenderers.Remove(entity);
     }
 
 #pragma endregion
@@ -196,7 +211,7 @@ namespace grimar::engine {
             return false;
         }
 
-        m_animators.insert_or_assign(entity.id, animator);
+        m_animators.Add(entity, animator);
         return true;
     }
 
@@ -205,7 +220,7 @@ namespace grimar::engine {
             return false;
         }
 
-        return m_animators.find(entity.id) != m_animators.end();
+        return m_animators.Contains(entity);
     }
 
     Animator2D* World::GetAnimator2D(Entity entity) noexcept {
@@ -213,12 +228,7 @@ namespace grimar::engine {
             return nullptr;
         }
 
-        auto it = m_animators.find(entity.id);
-        if (it == m_animators.end()) {
-            return nullptr;
-        }
-
-        return &it->second;
+        return m_animators.Get(entity);
     }
 
     const Animator2D* World::GetAnimator2D(Entity entity) const noexcept {
@@ -226,12 +236,7 @@ namespace grimar::engine {
             return nullptr;
         }
 
-        auto it = m_animators.find(entity.id);
-        if (it == m_animators.end()) {
-            return nullptr;
-        }
-
-        return &it->second;
+        return m_animators.Get(entity);
     }
 
     bool World::RemoveAnimator2D(Entity entity) noexcept {
@@ -239,7 +244,52 @@ namespace grimar::engine {
             return false;
         }
 
-        return m_animators.erase(entity.id) > 0;
+        return m_animators.Remove(entity);
+    }
+
+#pragma endregion
+
+#pragma region Character controller component functions impl
+
+    bool World::AddCharacterController2D(Entity entity, CharacterController2D controller) noexcept {
+        if (!IsAlive(entity)) {
+            return false;
+        }
+
+        m_characterControllers.Add(entity, controller);
+        return true;
+    }
+
+    bool World::HasCharacterController2D(Entity entity) const noexcept {
+        if (!IsAlive(entity)) {
+            return false;
+        }
+
+        return m_characterControllers.Contains(entity);
+    }
+
+    CharacterController2D* World::GetCharacterController2D(Entity entity) noexcept {
+        if (!IsAlive(entity)) {
+            return nullptr;
+        }
+
+        return m_characterControllers.Get(entity);
+    }
+
+    const CharacterController2D* World::GetCharacterController2D(Entity entity) const noexcept {
+        if (!IsAlive(entity)) {
+            return nullptr;
+        }
+
+        return m_characterControllers.Get(entity);
+    }
+
+    bool World::RemoveCharacterController2D(Entity entity) noexcept {
+        if (!IsAlive(entity)) {
+            return false;
+        }
+
+        return m_characterControllers.Remove(entity);
     }
 
 #pragma endregion
@@ -252,7 +302,7 @@ namespace grimar::engine {
             return false;
         }
 
-        m_rigidBodies.insert_or_assign(entity.id, rigidBody);
+        m_rigidBodies.Add(entity, rigidBody);
         return true;
     }
 
@@ -261,7 +311,7 @@ namespace grimar::engine {
             return false;
         }
 
-        return m_rigidBodies.find(entity.id) != m_rigidBodies.end();
+        return m_rigidBodies.Contains(entity);
     }
 
     RigidBody2D* World::GetRigidBody(Entity entity) noexcept {
@@ -269,12 +319,7 @@ namespace grimar::engine {
             return nullptr;
         }
 
-        auto it = m_rigidBodies.find(entity.id);
-        if (it == m_rigidBodies.end()) {
-            return nullptr;
-        }
-
-        return &it->second;
+        return m_rigidBodies.Get(entity);
     }
 
     const RigidBody2D *World::GetRigidBody(Entity entity) const noexcept {
@@ -282,12 +327,7 @@ namespace grimar::engine {
             return nullptr;
         }
 
-        auto it = m_rigidBodies.find(entity.id);
-        if (it == m_rigidBodies.end()) {
-            return nullptr;
-        }
-
-        return &it->second;
+        return m_rigidBodies.Get(entity);
     }
 
     bool World::RemoveRigidBody(Entity entity) noexcept {
@@ -295,7 +335,7 @@ namespace grimar::engine {
             return false;
         }
 
-        return m_rigidBodies.erase(entity.id) > 0;
+        return m_rigidBodies.Remove(entity);
     }
 
     // colliders functions
@@ -304,7 +344,7 @@ namespace grimar::engine {
             return false;
         }
 
-        m_boxColliders.insert_or_assign(entity.id, collider);
+        m_boxColliders.Add(entity, collider);
         return true;
     }
 
@@ -313,7 +353,7 @@ namespace grimar::engine {
             return false;
         }
 
-        return m_boxColliders.find(entity.id) != m_boxColliders.end();
+        return m_boxColliders.Contains(entity);
     }
 
     BoxCollider2D* World::GetBoxCollider(Entity entity) noexcept {
@@ -321,12 +361,7 @@ namespace grimar::engine {
             return nullptr;
         }
 
-        auto it = m_boxColliders.find(entity.id);
-        if (it == m_boxColliders.end()) {
-            return nullptr;
-        }
-
-        return &it->second;
+        return m_boxColliders.Get(entity);
     }
 
     const BoxCollider2D *World::GetBoxCollider(Entity entity) const noexcept {
@@ -334,12 +369,7 @@ namespace grimar::engine {
             return nullptr;
         }
 
-        auto it = m_boxColliders.find(entity.id);
-        if (it == m_boxColliders.end()) {
-            return nullptr;
-        }
-
-        return &it->second;
+        return m_boxColliders.Get(entity);
     }
 
     bool World::RemoveBoxCollider(Entity entity) noexcept {
@@ -347,7 +377,7 @@ namespace grimar::engine {
             return false;
         }
 
-        return m_boxColliders.erase(entity.id) > 0;
+        return m_boxColliders.Remove(entity);
     }
 
 #pragma endregion
