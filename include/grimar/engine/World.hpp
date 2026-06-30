@@ -8,6 +8,7 @@
 
 
 #include "grimar/engine/Entity.hpp"
+#include "grimar/engine/components/Animator2D.hpp"
 #include "grimar/engine/components/BoxCollider2D.hpp"
 #include "grimar/engine/components/RigidBody2D.hpp"
 #include "grimar/engine/components/SpriteRenderer.hpp"
@@ -115,6 +116,29 @@ namespace grimar::engine {
 
 #pragma endregion
 
+#pragma region Animation Component Functions
+
+        bool AddAnimator2D(Entity entity, Animator2D animator) noexcept;
+        [[nodiscard]] bool HasAnimator2D(Entity entity) const noexcept;
+        [[nodiscard]] Animator2D* GetAnimator2D(Entity entity) noexcept;
+        [[nodiscard]] const Animator2D* GetAnimator2D(Entity entity) const noexcept;
+        bool RemoveAnimator2D(Entity entity) noexcept;
+
+        template <typename Fn>
+        void ForEachAnimator2D(Fn&& fn) {
+            for (auto& [id, animator] : m_animators) {
+                Entity entity{id, m_generations[id]};
+
+                if (!IsAlive(entity)) {
+                    continue;
+                }
+
+                fn(entity, animator);
+            }
+        }
+
+#pragma endregion
+
 #pragma region Physics Component Functions
 
         bool AddRigidBody(Entity entity, RigidBody2D rigidBody) noexcept;
@@ -182,6 +206,8 @@ namespace grimar::engine {
         // Bu da Transform2D gibi unordered_map ile basliyor.
         // Ileride dense/sparse storage'a gecilebilir.
         std::unordered_map<Entity::Id, SpriteRenderer> m_spriteRenderers{};
+
+        std::unordered_map<Entity::Id, Animator2D> m_animators{};
 
 
         std::unordered_map<Entity::Id, RigidBody2D>   m_rigidBodies{};

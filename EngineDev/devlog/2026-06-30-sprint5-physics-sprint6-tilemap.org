@@ -166,9 +166,9 @@ Bugun =Grimar-Engine-TODOs.org= icinde:
 - Sprint 6 DONE yapildi.
 - Tilemap render, solid collision ve JSON level format maddeleri tamamlandi.
 
-Sprint 3 Animation maddesi pratikte kismen kodda var.
-Ama world/render tarafinda tam idle/run animation flow'u netlesmedigi icin
-bilerek otomatik kapatilmadi.
+Sprint 3 Animation maddesi gunun ilk bolumunde pratikte kismen kodda vardi.
+World/render tarafinda tam animation flow'u netlesmedigi icin o anda bilerek
+otomatik kapatilmadi.
 
 * Ogrenilen / Netlesen Noktalar
 
@@ -194,8 +194,7 @@ Ama bundan once kisa bir cleanup pass faydali olabilir:
 
 - EngineApp demo setup'i daha okunur hale getirmek
 - Test fixture helperlari cikarmak
-- Sprite animation TODO'sunu gercek durumuna gore kapatmak veya yeniden
-  tanimlamak
+- CharacterController2D oncesi input/movement sinirlarini netlestirmek
 
 * Kisa Ozet
 
@@ -212,3 +211,38 @@ Artik motor:
 
 Bu, CharacterController2D ve platformer feel tarafina gecmek icin iyi bir
 temel.
+
+* Teknik Borc Kapatma - Animation ECS Entegrasyonu
+
+Gunun devaminda Sprint 3'ten kalan animation borcu kapatildi.
+
+Yapilanlar:
+
+- =Animator2D= componenti eklendi.
+- =World= icine Animator2D storage/API eklendi.
+- =AnimationSystem= eklendi.
+- AnimationSystem, Animator2D state'ini =Update(dt)= ile ilerletiyor.
+- Guncel animation frame, ayni entity uzerindeki =SpriteRenderer.spriteName=
+  alanina yaziliyor.
+- =RenderSystem= animasyon bilmeden mevcut sprite render yolunu kullanmaya
+  devam ediyor.
+- Eski =assets::AnimationState= playback sinifi kaldirildi; asset katmaninda
+  sadece =AnimationClip= ve =AnimationFrame= datasi birakildi.
+- =EngineApp= icindeki app-level =AnimationState= kullanimi kaldirildi.
+- Sandbox demo entity'si artik Animator2D component uzerinden idle animasyon
+  oynatiyor.
+
+Eklenen smoke testler:
+
+- Animator2D component default/state testleri
+- World Animator2D storage add/get/remove/foreach testleri
+- AnimationSystem frame advance testi
+- Loop eden clip testi
+- Loop etmeyen clip'in son frame'de durma testi
+
+Org TODO durumu:
+
+- Sprint 3 DONE yapildi.
+- Animation2D / Animator2D maddeleri kapatildi.
+- Sprint 3 final checklist kapatildi.
+- Sprint 4 ust basligi da gercek proje durumuna uygun sekilde DONE yapildi.

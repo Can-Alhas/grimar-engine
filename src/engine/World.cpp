@@ -35,6 +35,7 @@ namespace grimar::engine {
         m_transforms.erase(entity.id);
         //
         m_spriteRenderers.erase(entity.id);
+        m_animators.erase(entity.id);
 
         //
         m_rigidBodies.erase(entity.id);
@@ -184,6 +185,61 @@ namespace grimar::engine {
         }
 
         return m_spriteRenderers.erase(entity.id) > 0;
+    }
+
+#pragma endregion
+
+#pragma region Animation component functions impl
+
+    bool World::AddAnimator2D(Entity entity, Animator2D animator) noexcept {
+        if (!IsAlive(entity)) {
+            return false;
+        }
+
+        m_animators.insert_or_assign(entity.id, animator);
+        return true;
+    }
+
+    bool World::HasAnimator2D(Entity entity) const noexcept {
+        if (!IsAlive(entity)) {
+            return false;
+        }
+
+        return m_animators.find(entity.id) != m_animators.end();
+    }
+
+    Animator2D* World::GetAnimator2D(Entity entity) noexcept {
+        if (!IsAlive(entity)) {
+            return nullptr;
+        }
+
+        auto it = m_animators.find(entity.id);
+        if (it == m_animators.end()) {
+            return nullptr;
+        }
+
+        return &it->second;
+    }
+
+    const Animator2D* World::GetAnimator2D(Entity entity) const noexcept {
+        if (!IsAlive(entity)) {
+            return nullptr;
+        }
+
+        auto it = m_animators.find(entity.id);
+        if (it == m_animators.end()) {
+            return nullptr;
+        }
+
+        return &it->second;
+    }
+
+    bool World::RemoveAnimator2D(Entity entity) noexcept {
+        if (!IsAlive(entity)) {
+            return false;
+        }
+
+        return m_animators.erase(entity.id) > 0;
     }
 
 #pragma endregion

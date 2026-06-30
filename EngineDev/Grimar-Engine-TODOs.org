@@ -843,7 +843,7 @@ Sprint 2 tamamlandığında:
 
 
 
-* TODO Sprint 3 – Assets, Sprites & Animation Foundations
+* DONE Sprint 3 – Assets, Sprites & Animation Foundations
 
 ** Amaç
 
@@ -953,7 +953,7 @@ Bu sprint sonunda:
 
 
 
-* TODO 2. Sprite System
+* DONE 2. Sprite System
 
 ** DONE 2.1 Sprite Draw API
 
@@ -1019,44 +1019,28 @@ Bu sprint sonunda:
 
 
 
-* TODO 3. Animation
+* DONE 3. Animation
 
-** TODO 3.1 Animation2D Component (engine-level)
+** DONE 3.1 Animation2D Component (engine-level)
 *** Amaç
 
 - Frame based sprite animasyon altyapısı
 
 
 
-*** Yapılacaklar [0/3]
+*** Yapılacaklar [3/3]
 
-- [ ] AnimationClip (frames + durations)
+- [X] AnimationClip (frames + durations)
 
-- [ ] AnimationState (current time/frame)
+- [X] Animator2D playback state (current time/frame)
 
-- [ ] Update(dt) ile frame advance
-
-
-
-*** _DONE Kriteri [0%]
-
-- [ ] Idle/run animasyonu düzgün oynuyor
+- [X] Update(dt) ile frame advance
 
 
 
----
+*** _DONE Kriteri [100%]
 
-
-
-* TODO Sprint 3 Final Checklist [0%]
-
-- [ ] Texture load + cache
-
-- [ ] Sprite draw
-
-- [ ] SpriteSheet atlas
-
-- [ ] Basic animation
+- [X] World entity üzerinde basic sprite animation düzgün ilerliyor
 
 
 
@@ -1064,7 +1048,23 @@ Bu sprint sonunda:
 
 
 
-* TODO Sprint 3 Sonuç
+* DONE Sprint 3 Final Checklist [100%]
+
+- [X] Texture load + cache
+
+- [X] Sprite draw
+
+- [X] SpriteSheet atlas
+
+- [X] Basic animation
+
+
+
+---
+
+
+
+* DONE Sprint 3 Sonuç
 
 Sprint 3 tamamlandığında:
 
@@ -1080,7 +1080,7 @@ Sprint 3 tamamlandığında:
 
 
 
-* TODO Sprint 4 – World + ECS Lite (Entity / Components / Systems)
+* DONE Sprint 4 – World + ECS Lite (Entity / Components / Systems)
 ** Amaç
 - Render + physics gibi sistemleri “world” üzerinden yönetmek
 - Oyun objelerini composition ile kurmak (platformer altyapısı)

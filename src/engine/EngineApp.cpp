@@ -23,6 +23,7 @@
 #include "grimar/engine/components/Transform2D.hpp"
 
 #include "grimar/engine/components/SpriteRenderer.hpp"
+#include "grimar/engine/components/Animator2D.hpp"
 #include "grimar/engine/components/BoxCollider2D.hpp"
 #include "grimar/engine/components/RigidBody2D.hpp"
 
@@ -126,8 +127,6 @@ namespace grimar::engine {
             m_idleClip.frames.push_back({"player_idle_1", 0.20});
             m_idleClip.frames.push_back({"player_idle_2", 0.20});
 
-            m_idleAnim.SetClip(&m_idleClip);
-
             // entity 1
             auto entity = m_world.CreateEntity();
 
@@ -142,6 +141,11 @@ namespace grimar::engine {
 
             GRIMAR_ASSERT(m_world.AddTransform(entity, transform));
             GRIMAR_ASSERT(m_world.AddSpriteRenderer(entity, sprite));
+
+            grimar::engine::Animator2D animator{};
+            animator.SetClip(&m_idleClip);
+
+            GRIMAR_ASSERT(m_world.AddAnimator2D(entity, animator));
 
             grimar::engine::RigidBody2D body{};
             body.bodyType = grimar::engine::BodyType::Dynamic;
@@ -383,9 +387,7 @@ namespace grimar::engine {
         if (zoom > 6.0f)  zoom = 6.0f;
         m_camera.SetZoom(zoom);
 
-
-        // anim update
-        m_idleAnim.Update(dt);
+        m_animationSystem.Update(m_world, dt);
         
         
         //fps test log

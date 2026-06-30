@@ -3,6 +3,7 @@
 
 #include <string_view>
 #include <format> // Required for std::format_string and std::format
+#include <utility>
 
 namespace grimar::core {
     enum class LogLevel : unsigned char {

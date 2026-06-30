@@ -5,13 +5,16 @@
 
 #include "grimar/core/Assert.hpp"
 #include "grimar/core/Log.hpp"
+#include "grimar/assets/Animation2D.hpp"
 #include "grimar/assets/TileMap.hpp"
 #include "grimar/engine/Entity.hpp"
 #include "grimar/engine/World.hpp"
+#include "grimar/engine/components/Animator2D.hpp"
 #include "grimar/engine/components/BoxCollider2D.hpp"
 #include "grimar/engine/components/RigidBody2D.hpp"
 #include "grimar/engine/components/SpriteRenderer.hpp"
 #include "grimar/engine/components/Transform2D.hpp"
+#include "grimar/engine/systems/AnimationSystem.hpp"
 #include "grimar/engine/systems/PhysicsSystem.hpp"
 #include "grimar/engine/systems/TileMapSystem.hpp"
 
@@ -235,6 +238,131 @@ namespace grimar::engine {
             GRIMAR_ASSERT(!world.AddSpriteRenderer(entity, sprite));
 
             GRIMAR_LOG_INFO("World SpriteRenderer storage tests OK");
+        }
+
+        // Animator2D component and World storage tests
+        {
+            grimar::assets::AnimationClip clip{};
+            clip.loop = true;
+            clip.frames.push_back({"player_idle_0", 0.1});
+            clip.frames.push_back({"player_idle_1", 0.1});
+
+            grimar::engine::Animator2D animator{};
+            GRIMAR_ASSERT(animator.clip == nullptr);
+            GRIMAR_ASSERT(animator.frameIndex == 0);
+            GRIMAR_ASSERT(animator.timer == 0.0);
+            GRIMAR_ASSERT(animator.playing);
+            GRIMAR_ASSERT(animator.CurrentFrame() == nullptr);
+
+            animator.SetClip(&clip);
+            GRIMAR_ASSERT(animator.clip == &clip);
+            GRIMAR_ASSERT(animator.frameIndex == 0);
+            GRIMAR_ASSERT(animator.timer == 0.0);
+            GRIMAR_ASSERT(animator.playing);
+            GRIMAR_ASSERT(animator.CurrentFrame() != nullptr);
+            GRIMAR_ASSERT(animator.CurrentFrame()->spriteName == "player_idle_0");
+
+            grimar::engine::World world{};
+            const auto entity = world.CreateEntity();
+
+            GRIMAR_ASSERT(world.AddAnimator2D(entity, animator));
+            GRIMAR_ASSERT(world.HasAnimator2D(entity));
+
+            auto* stored = world.GetAnimator2D(entity);
+            GRIMAR_ASSERT(stored != nullptr);
+            GRIMAR_ASSERT(stored->clip == &clip);
+
+            int visited = 0;
+            world.ForEachAnimator2D([&](grimar::engine::Entity e,
+                                        grimar::engine::Animator2D& a) {
+                GRIMAR_ASSERT(e == entity);
+                a.timer = 0.05;
+                ++visited;
+            });
+
+            GRIMAR_ASSERT(visited == 1);
+            GRIMAR_ASSERT(stored->timer == 0.05);
+
+            GRIMAR_ASSERT(world.RemoveAnimator2D(entity));
+            GRIMAR_ASSERT(!world.HasAnimator2D(entity));
+            GRIMAR_ASSERT(world.GetAnimator2D(entity) == nullptr);
+
+            GRIMAR_LOG_INFO("Animator2D World storage tests OK");
+        }
+
+        // AnimationSystem sprite frame update tests
+        {
+            grimar::assets::AnimationClip clip{};
+            clip.loop = true;
+            clip.frames.push_back({"player_idle_0", 0.1});
+            clip.frames.push_back({"player_idle_1", 0.1});
+            clip.frames.push_back({"player_idle_2", 0.1});
+
+            grimar::engine::World world{};
+            grimar::engine::AnimationSystem animationSystem{};
+
+            const auto entity = world.CreateEntity();
+
+            grimar::engine::SpriteRenderer sprite{};
+            sprite.SetSprite("unset");
+
+            grimar::engine::Animator2D animator{};
+            animator.SetClip(&clip);
+
+            GRIMAR_ASSERT(world.AddSpriteRenderer(entity, sprite));
+            GRIMAR_ASSERT(world.AddAnimator2D(entity, animator));
+
+            animationSystem.Update(world, 0.0);
+            auto* storedSprite = world.GetSpriteRenderer(entity);
+            auto* storedAnimator = world.GetAnimator2D(entity);
+
+            GRIMAR_ASSERT(storedSprite != nullptr);
+            GRIMAR_ASSERT(storedAnimator != nullptr);
+            GRIMAR_ASSERT(storedSprite->spriteName == "player_idle_0");
+            GRIMAR_ASSERT(storedAnimator->frameIndex == 0);
+
+            animationSystem.Update(world, 0.1);
+            GRIMAR_ASSERT(storedSprite->spriteName == "player_idle_1");
+            GRIMAR_ASSERT(storedAnimator->frameIndex == 1);
+
+            animationSystem.Update(world, 0.2);
+            GRIMAR_ASSERT(storedSprite->spriteName == "player_idle_0");
+            GRIMAR_ASSERT(storedAnimator->frameIndex == 0);
+
+            GRIMAR_LOG_INFO("AnimationSystem sprite frame update tests OK");
+        }
+
+        // AnimationSystem non-loop clip stop tests
+        {
+            grimar::assets::AnimationClip clip{};
+            clip.loop = false;
+            clip.frames.push_back({"start", 0.1});
+            clip.frames.push_back({"end", 0.1});
+
+            grimar::engine::World world{};
+            grimar::engine::AnimationSystem animationSystem{};
+
+            const auto entity = world.CreateEntity();
+
+            grimar::engine::SpriteRenderer sprite{};
+            grimar::engine::Animator2D animator{};
+            animator.SetClip(&clip);
+
+            GRIMAR_ASSERT(world.AddSpriteRenderer(entity, sprite));
+            GRIMAR_ASSERT(world.AddAnimator2D(entity, animator));
+
+            animationSystem.Update(world, 1.0);
+
+            const auto* storedSprite = world.GetSpriteRenderer(entity);
+            const auto* storedAnimator = world.GetAnimator2D(entity);
+
+            GRIMAR_ASSERT(storedSprite != nullptr);
+            GRIMAR_ASSERT(storedAnimator != nullptr);
+            GRIMAR_ASSERT(storedSprite->spriteName == "end");
+            GRIMAR_ASSERT(storedAnimator->frameIndex == 1);
+            GRIMAR_ASSERT(!storedAnimator->playing);
+
+            GRIMAR_LOG_INFO("AnimationSystem non-loop clip tests OK");
         }
 
         // Physics component data tests

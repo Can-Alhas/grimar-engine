@@ -22,6 +22,7 @@
 #include "grimar/engine/World.hpp"
 
 #include "grimar/engine/systems/RenderSystem.hpp"
+#include "grimar/engine/systems/AnimationSystem.hpp"
 #include "grimar/engine/systems/DebugDrawSystem.hpp"
 #include "grimar/engine/systems/PhysicsSystem.hpp"
 #include "grimar/engine/systems/TileMapSystem.hpp"
@@ -99,12 +100,12 @@ namespace grimar::engine {
 
         //Animation
         grimar::assets::AnimationClip  m_idleClip;
-        grimar::assets::AnimationState m_idleAnim;
 
         //Game world / scene state
         grimar::engine::World m_world{};
 
         //
+        grimar::engine::AnimationSystem m_animationSystem;
         grimar::engine::RenderSystem m_renderSystem;
         grimar::engine::PhysicsSystem m_physicsSystem;
         grimar::engine::DebugDrawSystem m_debugDrawSystem;
