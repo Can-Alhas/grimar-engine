@@ -92,10 +92,26 @@ namespace grimar::render {
 
         //m_queue.push_back(DrawCmd{rect, c, layer});
 
-        m_queue.push_back( DrawCmd{
-            DrawCmd::Type::Rect, rect, c, layer, nullptr, {}
-        });
+        DrawCmd cmd{};
+        cmd.type = DrawCmd::Type::Rect;
+        cmd.rect = rect;
+        cmd.color = c;
+        cmd.layer = layer;
+        m_queue.push_back(cmd);
 
+    }
+
+    void SdlRenderer2D::DrawLine(grimar::core::Vec2f start,
+                                 grimar::core::Vec2f end,
+                                 Color color,
+                                 Layer layer) noexcept {
+        DrawCmd cmd{};
+        cmd.type = DrawCmd::Type::Line;
+        cmd.lineStart = start;
+        cmd.lineEnd = end;
+        cmd.color = color;
+        cmd.layer = layer;
+        m_queue.push_back(cmd);
     }
 
 
@@ -118,23 +134,33 @@ namespace grimar::render {
                   });
 
         for (const auto& cmd : m_queue) {
-            RectF screen = cmd.rect;
-
-            if (m_camera) {
-                const auto p = m_camera->WorldToScreen({cmd.rect.x, cmd.rect.y});
-                screen.x = p.x;
-                screen.y = p.y;
-                screen.w = cmd.rect.w * m_camera->Zoom();
-                screen.h = cmd.rect.h * m_camera->Zoom();
-            }
-
             if (cmd.type == DrawCmd::Type::Rect) {
+                RectF screen = cmd.rect;
+
+                if (m_camera) {
+                    const auto p = m_camera->WorldToScreen({cmd.rect.x, cmd.rect.y + cmd.rect.h});
+                    screen.x = p.x;
+                    screen.y = p.y;
+                    screen.w = cmd.rect.w * m_camera->Zoom();
+                    screen.h = cmd.rect.h * m_camera->Zoom();
+                }
+
                 SDL_FRect r{screen.x, screen.y, screen.w, screen.h};
 
                 SDL_SetRenderDrawColor(m_renderer, cmd.color.r, cmd.color.g, cmd.color.b, cmd.color.a);
                 SDL_RenderFillRectF(m_renderer, &r);
             }
             else if (cmd.type == DrawCmd::Type::Sprite) {
+                RectF screen = cmd.rect;
+
+                if (m_camera) {
+                    const auto p = m_camera->WorldToScreen({cmd.rect.x, cmd.rect.y + cmd.rect.h});
+                    screen.x = p.x;
+                    screen.y = p.y;
+                    screen.w = cmd.rect.w * m_camera->Zoom();
+                    screen.h = cmd.rect.h * m_camera->Zoom();
+                }
+
                 if (!cmd.texture) {
                     GRIMAR_LOG_ERROR("Sprite cmd has null Texture2D pointer");
                     continue;
@@ -161,6 +187,18 @@ namespace grimar::render {
                 if (rc != 0) {
                     GRIMAR_LOG_ERROR("{}" ,SDL_GetError());
                 }
+            }
+            else if (cmd.type == DrawCmd::Type::Line) {
+                auto start = cmd.lineStart;
+                auto end = cmd.lineEnd;
+
+                if (m_camera) {
+                    start = m_camera->WorldToScreen(start);
+                    end = m_camera->WorldToScreen(end);
+                }
+
+                SDL_SetRenderDrawColor(m_renderer, cmd.color.r, cmd.color.g, cmd.color.b, cmd.color.a);
+                SDL_RenderDrawLineF(m_renderer, start.x, start.y, end.x, end.y);
             }
         }
 

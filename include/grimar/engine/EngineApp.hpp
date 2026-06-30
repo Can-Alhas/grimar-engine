@@ -17,10 +17,14 @@
 #include "grimar/assets/SpriteSheet.hpp"
 
 #include "grimar/assets/Animation2D.hpp"
+#include "grimar/assets/TileMap.hpp"
 
 #include "grimar/engine/World.hpp"
 
 #include "grimar/engine/systems/RenderSystem.hpp"
+#include "grimar/engine/systems/DebugDrawSystem.hpp"
+#include "grimar/engine/systems/PhysicsSystem.hpp"
+#include "grimar/engine/systems/TileMapSystem.hpp"
 
 
 namespace grimar::engine {
@@ -90,6 +94,8 @@ namespace grimar::engine {
 
         // json falan
         grimar::assets::SpriteSheet m_testSheet;
+        grimar::assets::TileMap m_testTileMap;
+        grimar::core::Vec2f m_tileMapOrigin{-384.f, -160.f};
 
         //Animation
         grimar::assets::AnimationClip  m_idleClip;
@@ -100,5 +106,8 @@ namespace grimar::engine {
 
         //
         grimar::engine::RenderSystem m_renderSystem;
+        grimar::engine::PhysicsSystem m_physicsSystem;
+        grimar::engine::DebugDrawSystem m_debugDrawSystem;
+        grimar::engine::TileMapSystem m_tileMapSystem;
     };
 }

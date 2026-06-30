@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "spriteSheet": "assets/test.sprites.json",
+  "tileWidth": 64,
+  "tileHeight": 64,
+  "width": 12,
+  "height": 4,
+  "tiles": {
+    "1": { "sprite": "player_idle_2", "solid": true },
+    "2": { "sprite": "player_idle_1", "solid": true }
+  },
+  "data": [
+    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2
+  ]
+}

@@ -3,9 +3,11 @@
 
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 
+#include "grimar/core/Math2D.hpp"
 #include "grimar/render/Color.hpp"
 #include "grimar/render/Rect.hpp"
 
@@ -55,6 +57,19 @@ namespace grimar::render {
         // Convenience overload for explicit float coordinates.
         void DrawRect(float x, float y, float w, float h, Color color, Layer layer = 0) noexcept {
             DrawRect(RectF{x, y, w, h}, color, layer);
+        }
+#pragma endregion
+
+#pragma region LINE DRAWING INTERFACE
+        virtual void DrawLine(grimar::core::Vec2f start,
+                              grimar::core::Vec2f end,
+                              Color color,
+                              Layer layer) noexcept = 0;
+
+        void DrawLine(grimar::core::Vec2f start,
+                      grimar::core::Vec2f end,
+                      Color color) noexcept {
+            DrawLine(start, end, color, 0);
         }
 #pragma endregion
 

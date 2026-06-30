@@ -23,6 +23,8 @@
 #include "grimar/engine/components/Transform2D.hpp"
 
 #include "grimar/engine/components/SpriteRenderer.hpp"
+#include "grimar/engine/components/BoxCollider2D.hpp"
+#include "grimar/engine/components/RigidBody2D.hpp"
 
 
 
@@ -70,34 +72,6 @@ namespace grimar::engine {
 
         if (!InitSDL()) {
             GRIMAR_LOG_ERROR( "EngineApp::InitSDL failed");
-            return false;
-        }
-
-
-
-
-        // Entity test
-        {
-            grimar::engine::Entity inValid{};
-            GRIMAR_ASSERT(!inValid.IsValid());
-
-            grimar::engine::Entity e1{1, 1};
-            grimar::engine::Entity e2{1, 1};
-            grimar::engine::Entity stale{1, 2};
-
-            GRIMAR_ASSERT(!inValid.IsValid());
-            GRIMAR_ASSERT(e1.IsValid());
-            GRIMAR_ASSERT(e1 == e2);
-            GRIMAR_ASSERT(e1 != stale);
-
-            GRIMAR_LOG_INFO("Entity handle tests OK");
-        }
-
-
-
-
-        if (!InitSDL()) {
-            GRIMAR_LOG_ERROR("EngineApp::InitSDL failed");
             return false;
         }
 
@@ -158,32 +132,53 @@ namespace grimar::engine {
             auto entity = m_world.CreateEntity();
 
             grimar::engine::Transform2D transform{};
-            transform.SetPosition(200.f, 150.f);
+            transform.SetPosition(-300.f, 100.f);
 
             grimar::engine::SpriteRenderer sprite{};
             sprite.SetSprite("player_idle_0");
-            sprite.SetSize(256.f, 256.f);
+            sprite.SetSize(128.f, 128.f);
             sprite.layer = 5;
             sprite.visible = true;
 
             GRIMAR_ASSERT(m_world.AddTransform(entity, transform));
             GRIMAR_ASSERT(m_world.AddSpriteRenderer(entity, sprite));
 
+            grimar::engine::RigidBody2D body{};
+            body.bodyType = grimar::engine::BodyType::Dynamic;
+            body.velocity = {60.f, 0.f};
+
+            grimar::engine::BoxCollider2D collider{};
+            collider.size = {128.f, 128.f};
+
+            GRIMAR_ASSERT(m_world.AddRigidBody(entity, body));
+            GRIMAR_ASSERT(m_world.AddBoxCollider(entity, collider));
+
             // entity 2
             auto entity2 = m_world.CreateEntity();
 
             grimar::engine::Transform2D transform2{};
-            transform2.SetPosition(420.f, 150.f);
+            transform2.SetPosition(-120.f, 120.f);
 
             grimar::engine::SpriteRenderer sprite2{};
             sprite2.SetSprite("player_idle_1");
-            sprite2.SetSize(256.f, 256.f);
+            sprite2.SetSize(128.f, 128.f);
             sprite2.layer = 4;
             sprite2.visible = true;
 
             GRIMAR_ASSERT(m_world.AddTransform(entity2, transform2));
             GRIMAR_ASSERT(m_world.AddSpriteRenderer(entity2, sprite2));
 
+            if (!m_testTileMap.Load("assets/test.tilemap.json")) {
+                GRIMAR_LOG_WARN("test tilemap failed to load");
+            } else {
+                const auto colliderCount = m_tileMapSystem.CreateSolidColliders(
+                    m_testTileMap,
+                    m_world,
+                    m_tileMapOrigin
+                );
+                GRIMAR_LOG_INFO("test tilemap loaded; solid colliders created");
+                GRIMAR_ASSERT(colliderCount > 0);
+            }
 
             GRIMAR_LOG_INFO("World demo sprite entity created");
         }
@@ -253,6 +248,7 @@ namespace grimar::engine {
     void EngineApp::ShutdownSDL() noexcept {
 
         m_testSheet.Clear();
+        m_testTileMap.Clear();
         m_textTex.reset();
         m_assets.ClearAll();
 
@@ -339,7 +335,7 @@ namespace grimar::engine {
 
 
     void EngineApp::FixedUpdate(double fixedDt) noexcept {
-        // later:: physics, fixed-step systems
+        m_physicsSystem.FixedUpdate(m_world, fixedDt);
 
         ++s_fixedCount;
         s_fixedTimer += fixedDt;
@@ -411,15 +407,10 @@ namespace grimar::engine {
 
         m_renderer->Clear({20, 20, 20, 255});
 
-        m_renderer->DrawRect({100, 100, 200, 140},
-                              {60, 180, 255, 255},
-                              0);
+        m_tileMapSystem.Render(m_testTileMap, m_testSheet, *m_renderer, m_tileMapOrigin, -10);
 
         m_renderSystem.Render(m_world, m_testSheet, *m_renderer);
-
-        m_renderer->DrawRect({160, 140, 200, 140},
-                    {220, 80, 80, 255},
-                    10);
+        m_debugDrawSystem.Render(m_world, *m_renderer);
 
         m_renderer->EndFrame();
     }

@@ -6,11 +6,12 @@
 #include <unordered_map>
 #include <vector>
 
+
 #include "grimar/engine/Entity.hpp"
-#include "grimar/engine/components/Transform2D.hpp"
+#include "grimar/engine/components/BoxCollider2D.hpp"
+#include "grimar/engine/components/RigidBody2D.hpp"
 #include "grimar/engine/components/SpriteRenderer.hpp"
-
-
+#include "grimar/engine/components/Transform2D.hpp"
 
 
 namespace grimar::engine {
@@ -112,9 +113,51 @@ namespace grimar::engine {
             }
         }
 
-
 #pragma endregion
 
+#pragma region Physics Component Functions
+
+        bool AddRigidBody(Entity entity, RigidBody2D rigidBody) noexcept;
+        [[nodiscard]] bool HasRigidBody(Entity entity) const noexcept;
+        [[nodiscard]] RigidBody2D* GetRigidBody(Entity entity) noexcept;
+        [[nodiscard]] const RigidBody2D* GetRigidBody(Entity entity) const noexcept;
+        bool RemoveRigidBody(Entity entity) noexcept;
+
+
+        template<typename Fn>
+        void ForEachRigidBody(Fn&& fn) {
+            for (auto& [id, rigidBody] : m_rigidBodies) {
+                Entity entity{id, m_generations[id]};
+
+                if (!IsAlive(entity)) {
+                    continue;
+                }
+
+
+                fn(entity, rigidBody);
+            }
+        }
+
+
+        bool AddBoxCollider(Entity entity, BoxCollider2D collider) noexcept;
+        [[nodiscard]] bool HasBoxCollider(Entity entity) const noexcept;
+        [[nodiscard]] BoxCollider2D* GetBoxCollider(Entity entity) noexcept;
+        [[nodiscard]] const BoxCollider2D* GetBoxCollider(Entity entity) const noexcept;
+        bool RemoveBoxCollider(Entity entity) noexcept;
+
+        template <typename Fn>
+        void ForEachBoxCollider(Fn&& fn) {
+            for (auto& [id, collider] : m_boxColliders ) {
+                Entity entity{id, m_generations[id]};
+
+                if (!IsAlive(entity)) {
+                    continue;
+                }
+
+                fn(entity, collider);
+            }
+        }
+#pragma endregion
     private:
         // Her entity id icin aktif generation degerini tutar.
         // IsAlive(entity) buradan generation karsilastirir.
@@ -139,6 +182,10 @@ namespace grimar::engine {
         // Bu da Transform2D gibi unordered_map ile basliyor.
         // Ileride dense/sparse storage'a gecilebilir.
         std::unordered_map<Entity::Id, SpriteRenderer> m_spriteRenderers{};
+
+
+        std::unordered_map<Entity::Id, RigidBody2D>   m_rigidBodies{};
+        std::unordered_map<Entity::Id, BoxCollider2D> m_boxColliders{};
 
 
     };

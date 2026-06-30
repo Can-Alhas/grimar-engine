@@ -34,6 +34,8 @@ add_library(grimar_engine STATIC
 	    src/assets/SpriteSheet.cpp
 	    include/grimar/assets/Animation2D.hpp
 	    src/assets/Animation2D.cpp
+		include/grimar/assets/TileMap.hpp
+		src/assets/TileMap.cpp
 		include/grimar/engine/Entity.hpp
 
 		include/grimar/engine/World.hpp
@@ -43,7 +45,14 @@ add_library(grimar_engine STATIC
 		include/grimar/engine/components/SpriteRenderer.hpp
 		include/grimar/engine/systems/RenderSystem.hpp
 		src/engine/systems/RenderSystem.cpp
-
+		include/grimar/engine/systems/PhysicsSystem.hpp
+		src/engine/systems/PhysicsSystem.cpp
+		include/grimar/engine/systems/DebugDrawSystem.hpp
+		src/engine/systems/DebugDrawSystem.cpp
+		include/grimar/engine/systems/TileMapSystem.hpp
+		src/engine/systems/TileMapSystem.cpp
+		include/grimar/engine/components/RigidBody2D.hpp
+		include/grimar/engine/components/BoxCollider2D.hpp
 
 
 )

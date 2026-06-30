@@ -22,6 +22,10 @@ namespace grimar::render {
 
         //
         void DrawRect(RectF rect, Color color, Layer layer) noexcept override;
+        void DrawLine(grimar::core::Vec2f start,
+                      grimar::core::Vec2f end,
+                      Color color,
+                      Layer layer) noexcept override;
 
         void EndFrame() noexcept override;
         void SetCamera(const Camera2D* camera) noexcept override;
@@ -35,11 +39,14 @@ namespace grimar::render {
         void Shutdown() noexcept;
 
         struct DrawCmd {
-            enum class Type { Rect, Sprite } type{Type::Rect};
+            enum class Type { Rect, Sprite, Line } type{Type::Rect};
 
             RectF rect{};
             Color color{};
             Layer layer{0};
+
+            grimar::core::Vec2f lineStart{};
+            grimar::core::Vec2f lineEnd{};
 
             // Sprite-specific
             const grimar::assets::Texture2D* texture{nullptr};

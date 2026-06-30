@@ -36,6 +36,10 @@ namespace grimar::engine {
         //
         m_spriteRenderers.erase(entity.id);
 
+        //
+        m_rigidBodies.erase(entity.id);
+        m_boxColliders.erase(entity.id);
+        //
 
         // Generation artiriyoruz.
         // Bu sayede eski handle stale hale gelir.
@@ -180,6 +184,114 @@ namespace grimar::engine {
         }
 
         return m_spriteRenderers.erase(entity.id) > 0;
+    }
+
+#pragma endregion
+
+
+#pragma region Physics component function impl
+
+    bool World::AddRigidBody(Entity entity, RigidBody2D rigidBody) noexcept {
+        if (!IsAlive(entity)) {
+            return false;
+        }
+
+        m_rigidBodies.insert_or_assign(entity.id, rigidBody);
+        return true;
+    }
+
+    bool World::HasRigidBody(Entity entity) const noexcept {
+        if (!IsAlive(entity)) {
+            return false;
+        }
+
+        return m_rigidBodies.find(entity.id) != m_rigidBodies.end();
+    }
+
+    RigidBody2D* World::GetRigidBody(Entity entity) noexcept {
+        if (!IsAlive(entity)) {
+            return nullptr;
+        }
+
+        auto it = m_rigidBodies.find(entity.id);
+        if (it == m_rigidBodies.end()) {
+            return nullptr;
+        }
+
+        return &it->second;
+    }
+
+    const RigidBody2D *World::GetRigidBody(Entity entity) const noexcept {
+        if (!IsAlive(entity)) {
+            return nullptr;
+        }
+
+        auto it = m_rigidBodies.find(entity.id);
+        if (it == m_rigidBodies.end()) {
+            return nullptr;
+        }
+
+        return &it->second;
+    }
+
+    bool World::RemoveRigidBody(Entity entity) noexcept {
+        if (!IsAlive(entity)) {
+            return false;
+        }
+
+        return m_rigidBodies.erase(entity.id) > 0;
+    }
+
+    // colliders functions
+    bool World::AddBoxCollider(Entity entity, BoxCollider2D collider) noexcept {
+        if (!IsAlive(entity)) {
+            return false;
+        }
+
+        m_boxColliders.insert_or_assign(entity.id, collider);
+        return true;
+    }
+
+    bool World::HasBoxCollider(Entity entity) const noexcept {
+        if (!IsAlive(entity)) {
+            return false;
+        }
+
+        return m_boxColliders.find(entity.id) != m_boxColliders.end();
+    }
+
+    BoxCollider2D* World::GetBoxCollider(Entity entity) noexcept {
+        if (!IsAlive(entity)) {
+            return nullptr;
+        }
+
+        auto it = m_boxColliders.find(entity.id);
+        if (it == m_boxColliders.end()) {
+            return nullptr;
+        }
+
+        return &it->second;
+    }
+
+    const BoxCollider2D *World::GetBoxCollider(Entity entity) const noexcept {
+        if (!IsAlive(entity)) {
+            return nullptr;
+        }
+
+        auto it = m_boxColliders.find(entity.id);
+        if (it == m_boxColliders.end()) {
+            return nullptr;
+        }
+
+        return &it->second;
+    }
+
+    bool World::RemoveBoxCollider(Entity entity) noexcept {
+        if (!IsAlive(entity)) {
+            return false;
+        }
+
+        return m_boxColliders.erase(entity.id) > 0;
     }
 
 #pragma endregion
