@@ -17,8 +17,8 @@ namespace grimar::engine {
                                grimar::render::Renderer2D& renderer,
                                grimar::core::Vec2f origin,
                                grimar::render::Layer layer) noexcept {
-        const float tileW = static_cast<float>(tileMap.TileWidth());
-        const float tileH = static_cast<float>(tileMap.TileHeight());
+        const auto tileW = static_cast<float>(tileMap.TileWidth());
+        const auto tileH = static_cast<float>(tileMap.TileHeight());
 
         for (int y = 0; y < tileMap.Height(); ++y) {
             for (int x = 0; x < tileMap.Width(); ++x) {
@@ -56,8 +56,8 @@ namespace grimar::engine {
     std::uint32_t TileMapSystem::CreateSolidColliders(const grimar::assets::TileMap& tileMap,
                                                       World& world,
                                                       grimar::core::Vec2f origin) noexcept {
-        const float tileW = static_cast<float>(tileMap.TileWidth());
-        const float tileH = static_cast<float>(tileMap.TileHeight());
+        const auto tileW = static_cast<float>(tileMap.TileWidth());
+        const auto tileH = static_cast<float>(tileMap.TileHeight());
         std::uint32_t created{0};
 
         for (int y = 0; y < tileMap.Height(); ++y) {
