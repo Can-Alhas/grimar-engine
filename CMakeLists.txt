@@ -44,7 +44,22 @@ add_library(grimar_engine STATIC
 		include/grimar/engine/systems/RenderSystem.hpp
 		src/engine/systems/RenderSystem.cpp
 
+
+
 )
+
+
+add_executable(grimar_tests
+		tests/smoke/EngineSmokeTests.cpp
+		tests/smoke/EngineSmokeTests.hpp
+		tests/main.cpp
+)
+
+target_include_directories(grimar_tests PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}/tests
+)
+
+target_link_libraries(grimar_tests PRIVATE grimar_engine)
 
 target_include_directories(grimar_engine PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include

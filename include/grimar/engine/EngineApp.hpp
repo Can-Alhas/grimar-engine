@@ -59,6 +59,9 @@ namespace grimar::engine {
         void PollEvents()    noexcept;
         void Tick()          noexcept; // one frame: time/input/update/render
 
+
+
+
         // Hooks (now empty; later implement to systems)
         void FixedUpdate(double fixedDt) noexcept;
         void Update(double dt)           noexcept;

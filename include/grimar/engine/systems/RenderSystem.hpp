@@ -32,7 +32,7 @@ namespace grimar::engine {
         //
         // Renderer2D:
         //   Son cizim komutunu renderer queue'ya gonderir.
-        void Render(World& wordl,
+        void Render(World& world,
                     const grimar::assets::SpriteSheet& spriteSheet,
                     grimar::render::Renderer2D& renderer) noexcept;
     };
