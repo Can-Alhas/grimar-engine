@@ -1,0 +1,57 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "vcpkg-debug",
+      "displayName": "Debug (vcpkg)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/vcpkg-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
+      "name": "native-debug",
+      "displayName": "Debug (native packages)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/native-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "vcpkg-debug",
+      "configurePreset": "vcpkg-debug",
+      "configuration": "Debug"
+    },
+    {
+      "name": "native-debug",
+      "configurePreset": "native-debug",
+      "configuration": "Debug"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "vcpkg-debug",
+      "configurePreset": "vcpkg-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "native-debug",
+      "configurePreset": "native-debug",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

@@ -4,6 +4,41 @@ project(Grimar LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+include(CTest)
+
+# Support both vcpkg CONFIG packages and native distro installations.
+find_package(PkgConfig QUIET)
+find_package(SDL2 CONFIG REQUIRED)
+
+find_package(SDL2_image CONFIG QUIET)
+if (TARGET SDL2_image::SDL2_image)
+    set(GRIMAR_SDL2_IMAGE_TARGET SDL2_image::SDL2_image)
+elseif (TARGET SDL2_image::SDL2_image-static)
+    set(GRIMAR_SDL2_IMAGE_TARGET SDL2_image::SDL2_image-static)
+elseif (PkgConfig_FOUND)
+    pkg_check_modules(SDL2_IMAGE QUIET IMPORTED_TARGET SDL2_image)
+    if (TARGET PkgConfig::SDL2_IMAGE)
+        set(GRIMAR_SDL2_IMAGE_TARGET PkgConfig::SDL2_IMAGE)
+    endif()
+endif()
+if (NOT GRIMAR_SDL2_IMAGE_TARGET)
+    message(FATAL_ERROR "SDL2_image was not found. Install it through vcpkg or your platform package manager.")
+endif()
+
+find_package(nlohmann_json CONFIG QUIET)
+if (TARGET nlohmann_json::nlohmann_json)
+    set(GRIMAR_NLOHMANN_JSON_TARGET nlohmann_json::nlohmann_json)
+else()
+    find_path(GRIMAR_NLOHMANN_JSON_INCLUDE_DIR nlohmann/json.hpp)
+    if (NOT GRIMAR_NLOHMANN_JSON_INCLUDE_DIR)
+        message(FATAL_ERROR "nlohmann_json was not found. Install it through vcpkg or your platform package manager.")
+    endif()
+    add_library(grimar_nlohmann_json INTERFACE)
+    target_include_directories(grimar_nlohmann_json INTERFACE ${GRIMAR_NLOHMANN_JSON_INCLUDE_DIR})
+    set(GRIMAR_NLOHMANN_JSON_TARGET grimar_nlohmann_json)
+endif()
 
 # ---- Engine Library ----
 add_library(grimar_engine STATIC
@@ -92,12 +127,6 @@ target_sources(grimar_engine PRIVATE
 )
 
 
-find_package(SDL2 CONFIG REQUIRED)
-find_package(SDL2_image CONFIG REQUIRED)
-find_package(SDL2_ttf CONFIG REQUIRED)
-find_package(SDL2_mixer CONFIG REQUIRED)
-find_package(nlohmann_json CONFIG REQUIRED)
-
 add_library(dear_imgui STATIC
         third_party/imgui/imgui.cpp
         third_party/imgui/imgui_draw.cpp
@@ -118,17 +147,18 @@ target_link_libraries(dear_imgui PUBLIC
 
 target_link_libraries(grimar_engine PUBLIC
         $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>
-        SDL2::SDL2main
-
-        $<IF:$<TARGET_EXISTS:SDL2_image::SDL2_image>,SDL2_image::SDL2_image,SDL2_image::SDL2_image-static>
-        $<IF:$<TARGET_EXISTS:SDL2_ttf::SDL2_ttf>,SDL2_ttf::SDL2_ttf,SDL2_ttf::SDL2_ttf-static>
-        $<IF:$<TARGET_EXISTS:SDL2_mixer::SDL2_mixer>,SDL2_mixer::SDL2_mixer,SDL2_mixer::SDL2_mixer-static>
+        ${GRIMAR_SDL2_IMAGE_TARGET}
 )
 
 target_link_libraries(grimar_engine PRIVATE
-        nlohmann_json::nlohmann_json
+        ${GRIMAR_NLOHMANN_JSON_TARGET}
         dear_imgui
 )
+
+# SDL2main is the Windows entry-point shim and is not needed on Unix.
+if (TARGET SDL2::SDL2main)
+    target_link_libraries(grimar_engine PUBLIC SDL2::SDL2main)
+endif()
 
 # ---- Sandbox executable (boot) -----
 add_executable(grimar_sandbox
@@ -171,3 +201,15 @@ if (WIN32)
         )
 endif()
 
+# Keep sample assets next to every executable so IDE and command-line launches
+# behave the same regardless of the process working directory.
+foreach (grimar_target IN ITEMS grimar_sandbox grimar_editor grimar_tests)
+        add_custom_command(TARGET ${grimar_target} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${CMAKE_CURRENT_SOURCE_DIR}/assets
+                $<TARGET_FILE_DIR:${grimar_target}>/assets)
+endforeach()
+
+if (BUILD_TESTING)
+        add_test(NAME grimar_smoke COMMAND grimar_tests)
+endif()
