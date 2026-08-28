@@ -3,7 +3,9 @@
 #include "grimar/core/Log.hpp"
 #include "sandbox/SandboxScene.hpp"
 
+#include <fileapi.h>
 #include <memory>
+#include <nlohmann/detail/meta/type_traits.hpp>
 
 
 int main()
@@ -40,9 +42,9 @@ int main()
     grimar::core::SetLogLevel(grimar::core::LogLevel::Trace);
 
     grimar::engine::EngineConfig cfg{};
-    cfg.windowTitle  = "Grimar Sandbox";
+    cfg.windowTitle  = "Grimar Sandbox ";
     cfg.windowWidth  = 1280;
-    cfg.windowHeight = 720;
+    cfg.windowHeight = 1000;
 
     // Test : vsync false
     cfg.vsync = true;
@@ -59,6 +61,7 @@ int main()
     if (!engine.Init())
         return 1;
 
+    
     return engine.Run();
 
 
